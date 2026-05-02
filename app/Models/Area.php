@@ -24,7 +24,7 @@ class Area extends Model
 
     public  function activeMidwifeArea(): HasOne
     {
-        return $this->hasOne(MidwifeArea::class)->where('is_actve', true);
+        return $this->hasOne(MidwifeArea::class)->where('is_active', true);
     }
 
     public function motherProfiles(): HasMany

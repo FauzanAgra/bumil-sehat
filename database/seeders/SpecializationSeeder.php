@@ -20,6 +20,8 @@ class SpecializationSeeder extends Seeder
                 'wa_greeting' => 'Halo Bu Bidan, saya ingin konsultasi.',
                 'is_active' => true,
                 'sort_order' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Dokter Umum',
@@ -28,6 +30,8 @@ class SpecializationSeeder extends Seeder
                 'wa_greeting' => 'Halo Dokter, saya ingin bertanya.',
                 'is_active' => true,
                 'sort_order' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Nutrisionis',
@@ -36,6 +40,8 @@ class SpecializationSeeder extends Seeder
                 'wa_greeting' => 'Halo, saya ingin bertanya terkait nutrisi.',
                 'is_active' => true,
                 'sort_order' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Psikolog',
@@ -44,6 +50,8 @@ class SpecializationSeeder extends Seeder
                 'wa_greeting' => 'Halo, saya ingin konsultasi kesehatan mental.',
                 'is_active' => true,
                 'sort_order' => 4,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ]);
     }

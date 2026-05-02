@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Filament\Tables\Columns\Layout\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -34,6 +35,11 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_verified' => 'boolean'
         ];
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->role === 'admin';
     }
 
     // Relationships
