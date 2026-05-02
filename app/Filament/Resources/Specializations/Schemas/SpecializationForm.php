@@ -21,7 +21,7 @@ class SpecializationForm
                     ->placeholder('contoh: Bidan, Dokter Umum'),
                 Select::make('role_group')
                     ->label('Grup Role')
-                    ->options(['midwife' => 'Midwife', 'doctor' => 'Doctor'])
+                    ->options(['midwife' => 'Bidan', 'doctor' => 'Dokter'])
                     ->required()
                     ->native(false),
                 TextInput::make('icon')
