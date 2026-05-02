@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('ttd_statuses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pregnacy_id')->unique()->constrained()->cascadeOnDelete();
-            $table->boolean('is-active')->default(false);
+            $table->foreignId('pregnancy_id')->unique()->constrained()->cascadeOnDelete();
+            $table->boolean('is_active')->default(false);
             $table->timestamp('started_at')->nullable();
             $table->enum('activated_by', ['system', 'midwife'])->nullable();
             $table->timestamps();

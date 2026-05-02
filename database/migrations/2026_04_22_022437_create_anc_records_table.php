@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('lila', 5, 2)->nullable(); //cm
             $table->unsignedSmallInteger('systolic')->nullable(); //mmHg
             $table->unsignedSmallInteger('diastolic')->nullable(); //mmHg
+            $table->decimal('hb', 4, 1)->nullable(); // g/dL
 
             // Status Pemeriksaan
             $table->enum('tt_status', ['done', 'not_done'])->nullable();

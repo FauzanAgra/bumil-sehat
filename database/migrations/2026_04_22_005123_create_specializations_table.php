@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('specializations', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->enum('role group', ['midwife', 'doctor']);
+            $table->enum('role_group', ['midwife', 'doctor']);
             $table->string('icon')->nullable();
             $table->string('color')->nullable();
             $table->text('wa_greeting')->nullable();
