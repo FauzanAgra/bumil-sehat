@@ -18,9 +18,14 @@ class AreaResource extends Resource
 {
     protected static ?string $model = Area::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMap;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationLabel = 'Wilayah (RW)';
+    protected static ?string $pluralModelLabel = 'Wilayah (RW)';
+    protected static ?string $modelLabel = 'Wilayah';
 
     public static function form(Schema $schema): Schema
     {
@@ -46,5 +51,10 @@ class AreaResource extends Resource
             'create' => CreateArea::route('/create'),
             'edit' => EditArea::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Master Data';
     }
 }

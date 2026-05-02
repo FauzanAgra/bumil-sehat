@@ -18,9 +18,14 @@ class SpecializationResource extends Resource
 {
     protected static ?string $model = Specialization::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?string $navigationLabel = 'Spesialisasi';
+
+    protected static ?string $pluralModelLabel = 'Spesialisasi';
+
+    protected static ?string $modelLabel = 'Spesialisasi';
 
     public static function form(Schema $schema): Schema
     {
@@ -46,5 +51,10 @@ class SpecializationResource extends Resource
             'create' => CreateSpecialization::route('/create'),
             'edit' => EditSpecialization::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Master Data';
     }
 }

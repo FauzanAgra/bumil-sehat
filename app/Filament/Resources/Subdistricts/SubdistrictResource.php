@@ -18,9 +18,17 @@ class SubdistrictResource extends Resource
 {
     protected static ?string $model = Subdistrict::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Kelurahan';
+
+    protected static ?string $pluralModelLabel = 'Kelurahan';
+
+    protected static ?string $modelLabel = 'Kelurahan';
 
     public static function form(Schema $schema): Schema
     {
@@ -46,5 +54,10 @@ class SubdistrictResource extends Resource
             'create' => CreateSubdistrict::route('/create'),
             'edit' => EditSubdistrict::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Master Data';
     }
 }

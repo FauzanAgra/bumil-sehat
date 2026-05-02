@@ -39,7 +39,7 @@ class UsersTable
                     ->badge()
                     ->color(fn(string $state) => match ($state) {
                         'admin'   => 'primary',
-                        'midwife' => 'rose',
+                        'midwife' => 'warning',
                         'doctor'  => 'info',
                         'mother'  => 'success',
                     })

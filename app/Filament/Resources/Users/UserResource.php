@@ -20,9 +20,14 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationLabel = 'Pengguna';
+    protected static ?string $pluralModelLabel = 'Pengguna';
+    protected static ?string $modelLabel = 'Pengguna';
 
     public static function form(Schema $schema): Schema
     {
@@ -56,5 +61,10 @@ class UserResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Manajemen User';
     }
 }
