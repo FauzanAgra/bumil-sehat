@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'BumilSehat'),
 
     /*
     |--------------------------------------------------------------------------
@@ -98,6 +98,8 @@ return [
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
+
+    'nik_hash_salt' => env('NIK_HASH_SALT'),
 
     'previous_keys' => [
         ...array_filter(

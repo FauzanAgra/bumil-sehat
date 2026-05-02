@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\NIKService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,6 +69,18 @@ class MotherProfile extends Model
     public function ancRecords(): HasMany
     {
         return $this->hasMany(AncRecord::class, 'mother_id');
+    }
+
+    // Scopes
+    public function scopeByNik(Builder $query, string $nik): Builder
+    {
+        $hash = app(NIKService::class)->hashNIK($nik);
+        return $query->where('nik_hash', $hash);
+    }
+
+    public function scopeAssignedTo(Builder $query, int $midwifeId): Builder
+    {
+        return $query->where('assigned_midwife_id', $midwifeId);
     }
 
     // Helper
