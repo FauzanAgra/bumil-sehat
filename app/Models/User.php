@@ -72,4 +72,27 @@ class User extends Authenticatable
     {
         return $this->hasMany(Article::class, 'created_by');
     }
+
+    // Helper
+    public function isMother(): bool
+    {
+        return $this->role === 'mother';
+    }
+    public function isMidwife(): bool
+    {
+        return $this->role === 'midwife';
+    }
+    public function isDoctor(): bool
+    {
+        return $this->role === 'doctor';
+    }
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isMedicalStaff(): bool
+    {
+        return in_array($this->role, ['midwife', 'doctor']);
+    }
 }

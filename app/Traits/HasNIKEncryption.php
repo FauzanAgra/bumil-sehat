@@ -14,7 +14,7 @@ trait HasNIKEncryption
         $service = app(NIKService::class);
 
         $this->attributes['nik_encrypted'] = $service->encrypt($nik);
-        $this->atrributes['nik_hash'] = $service->hashNIK($nik);
+        $this->attributes['nik_hash'] = $service->hashNIK($nik);
     }
 
     // ── Dekripsi NIK penuh (hanya role terotorisasi) ──────────────────

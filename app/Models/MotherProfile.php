@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\NIKService;
+use App\Traits\HasNIKEncryption;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MotherProfile extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasNIKEncryption;
 
     protected $fillable = [
         'user_id',
