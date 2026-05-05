@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Pregnancies\Schemas;
 
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class PregnancyInfolist
@@ -54,7 +54,7 @@ class PregnancyInfolist
                             ->label('ANC Selesai')
                             ->getStateUsing(fn($record) => $record->completed_anc_count . ' dari 6'),
 
-                        TextEntry::make('nextSchedule.scheduled_date')
+                        TextEntry::make('nextSchedule.schedule_date')
                             ->label('Jadwal ANC Berikutnya')
                             ->date('d M Y')
                             ->placeholder('Tidak ada jadwal'),

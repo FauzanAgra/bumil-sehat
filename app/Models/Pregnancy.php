@@ -48,8 +48,8 @@ class Pregnancy extends Model
     {
         return $this->hasOne(AncSchedule::class)
             ->where('status', 'scheduled')
-            ->orderBy('scheduled_date')
-            ->ofMany('scheduled_date', 'min');
+            ->orderBy('schedule_date')
+            ->ofMany('schedule_date', 'min');
     }
 
     // Scopes

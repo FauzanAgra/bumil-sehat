@@ -24,6 +24,9 @@ class AncRecord extends Model
         'diastolic',
         'hb',
         'tt_status',
+        'fetal_position',
+        'fetal_heart_rate',
+        'is_locked',
     ];
 
     protected function casts(): array
@@ -54,14 +57,14 @@ class AncRecord extends Model
         return $this->belongsTo(User::class, 'recorded_by')->withTrashed();
     }
 
-    public function usdImage(): HasOne
+    public function usgImage(): HasOne
     {
         return $this->hasOne(AncUsgImage::class);
     }
 
     public function detectedConditions(): HasMany
     {
-        return $this->hasMany(DetectedCondition::class);
+        return $this->hasMany(DetectedCondition::class, 'anc_record_id');
     }
 
     public function validation(): HasOne
@@ -91,7 +94,7 @@ class AncRecord extends Model
         // KEK: lila < 23.5 cm
         if ($this->lila !== null && $this->lila < 23.5) {
             $this->detectedConditions()->firstOrCreate(
-                ['condtion_type' => 'kek'],
+                ['condition_type' => 'kek'],
                 [
                     'status' => 'detected',
                     'detected_at' => now()
@@ -155,6 +158,16 @@ class AncRecord extends Model
         static::created(function (AncRecord $record) {
             $record->detectConditions();
             $record->schedule?->markAsDone();
+        });
+
+        static::updated(function (AncRecord $record) {
+            // Hapus kondisi lama yang belum dikonfirmasi bidan
+            $record->detectedConditions()
+                ->where('status', 'detected')
+                ->delete();
+
+            // Deteksi ulang berdasarkan data terbaru
+            $record->detectConditions();
         });
 
         static::updating(function (AncRecord $record) {

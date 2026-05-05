@@ -24,7 +24,7 @@ class AncSchedule extends Model
     }
 
     // Relationship
-    public function preganancy(): BelongsTo
+    public function pregnancy(): BelongsTo
     {
         return $this->belongsTo(Pregnancy::class)->withTrashed();
     }

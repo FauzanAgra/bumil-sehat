@@ -41,6 +41,8 @@ return new class extends Migration
 
             $table->softDeletes();
             $table->timestamps();
+
+            $table->index(['mother_id', 'submitted_at']);
         });
     }
 

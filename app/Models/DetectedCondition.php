@@ -71,12 +71,12 @@ class DetectedCondition extends Model
     // Helper
     public function getLabelAttribute(): string
     {
-        return self::CONDITION_LABELS($this->condition_type) ?? $this->condition_type;
+        return self::CONDITION_LABELS[$this->condition_type] ?? $this->condition_type;
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUS_LABELS($this->status) ?? $this->status;
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
     }
 
     public function confirm(User $midwife, ?string $notes = null): void
