@@ -65,6 +65,7 @@ class ArticleForm
 
                         FileUpload::make('thumbnail')
                             ->label('Thumbnail')
+                            ->disk('public')
                             ->image()
                             ->directory('articles/thumbnails')
                             ->nullable(),

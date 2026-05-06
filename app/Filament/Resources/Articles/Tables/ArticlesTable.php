@@ -22,6 +22,7 @@ class ArticlesTable
             ->columns([
                 ImageColumn::make('thumbnail')
                     ->label('Thumbnail')
+                    ->disk('public')
                     ->square()
                     ->defaultImageUrl(fn() => 'https://placehold.co/60x60?text=No+Image'),
 
