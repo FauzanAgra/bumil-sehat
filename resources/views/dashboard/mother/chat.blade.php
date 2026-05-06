@@ -119,7 +119,7 @@
                                 <i class="fa-solid {{ $icon }}"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="text-sm font-bold text-gray-800">{{ $s->name }}</h4>
+                                <h4 class="text-sm font-bold text-gray-800">{{ $s->medicalProfile->full_name }}</h4>
                                 <p class="text-xs {{ $c['text'] }} font-medium">
                                     {{ $spec?->name ?? 'Tenaga Kesehatan' }}</p>
                                 @if ($s->medicalProfile?->availability)
