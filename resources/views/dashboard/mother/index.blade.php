@@ -230,10 +230,10 @@
                     <div
                         class="bg-white/25 backdrop-blur-md w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-bold">
                         <span class="text-xs uppercase tracking-wide opacity-90">
-                            {{ Carbon\Carbon::parse($nextSchedule->scheduled_date)->translatedFormat('D') }}
+                            {{ Carbon\Carbon::parse($nextSchedule->schedule_date)->translatedFormat('D') }}
                         </span>
                         <span class="text-2xl leading-none">
-                            {{ Carbon\Carbon::parse($nextSchedule->scheduled_date)->format('d') }}
+                            {{ Carbon\Carbon::parse($nextSchedule->schedule_date)->format('d') }}
                         </span>
                     </div>
                     <div class="flex-1 space-y-1">

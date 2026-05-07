@@ -29,6 +29,7 @@ class AncController extends Controller
             ->where('schedule_date', '>=', today()->toDateString())
             ->sortBy('schedule_date')
             ->first();
+        // dd($nextSchedule->toArray());
 
         return view('dashboard.mother.anc-history', compact(
             'user',
