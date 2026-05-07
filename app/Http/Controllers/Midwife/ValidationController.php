@@ -27,8 +27,6 @@ class ValidationController extends Controller
             'validation',
         ]);
 
-        return response()->json($ancRecord);
-
         return view('dashboard.midwife.validate-anc', compact(
             'user',
             'ancRecord'

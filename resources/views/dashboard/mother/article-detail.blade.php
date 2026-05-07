@@ -1,6 +1,6 @@
 @extends('layouts.mother')
 
-@section('title', 'BumilSehat - {{ $article->title }}')
+@section('title', 'BumilSehat - ' . $article->title)
 
 @section('content')
 

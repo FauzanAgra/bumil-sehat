@@ -4,12 +4,13 @@
 
 @section('content')
 
-    <header class="px-6 py-4 flex items-center gap-3 border-b border-gray-100 sticky top-0 bg-white z-40">
+    <header
+        class="px-6 py-4 flex justify-between items-center gap-3 border-b border-gray-100 sticky top-0 bg-white z-40 shrink-0">
         <a href="{{ route('midwife.patients.show', $ancRecord->mother_id) }}"
             class="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:bg-rose-50 transition">
             <i class="fa-solid fa-arrow-left"></i>
         </a>
-        <div class="flex-1">
+        <div class="text-right">
             <h1 class="text-base font-bold text-gray-700">Validasi Data ANC</h1>
             <p class="text-[11px] text-gray-400">
                 {{ $ancRecord->mother->user->name }} · ANC ke-{{ $ancRecord->schedule->anc_number }}
@@ -19,6 +20,35 @@
 
     <main class="flex-1 overflow-y-auto px-6 pb-10 pt-5 space-y-5">
 
+        <section
+            class="bg-linear-to-br from-rose-500 to-rose-700 rounded-[2rem] p-5 text-white relative overflow-hidden shadow-lg shadow-rose-200">
+            <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="relative z-10 flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl border-2 border-white/40 p-0.5 shrink-0">
+                    <img src="https://api.dicebear.com/9.x/notionists/svg?seed={{ $ancRecord->mother->user->name }}"
+                        class="rounded-xl w-full h-full object-cover bg-rose-300" alt="avatar">
+                </div>
+                <div class="flex-1">
+                    <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest">Ibu Hamil</p>
+                    <h2 class="text-base font-bold leading-tight">{{ $ancRecord->mother->user->name }}</h2>
+                    <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span class="text-[10px] bg-white/25 px-2.5 py-1 rounded-full font-semibold">
+                            ANC ke-{{ $ancRecord->schedule->anc_number }}
+                        </span>
+                        <span class="text-[10px] bg-white/25 px-2.5 py-1 rounded-full font-semibold">
+                            {{ \Carbon\Carbon::parse($ancRecord->schedule->schedule_date)->translatedFormat('d M Y') }}
+                        </span>
+                        @if ($ancRecord->detectedConditions->where('status', 'detected')->isNotEmpty())
+                            <span
+                                class="text-[10px] bg-yellow-400/30 text-yellow-100 px-2.5 py-1 rounded-full font-semibold">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>Ada Kondisi Risiko
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+
         @if ($ancRecord->is_locked)
             <div class="bg-green-50 border border-green-200 text-green-700 text-xs rounded-2xl px-4 py-3">
                 <i class="fa-solid fa-lock mr-1"></i> Data sudah dikunci dan tidak dapat diubah.
@@ -26,16 +56,20 @@
         @endif
 
         {{-- Info jadwal --}}
-        <div class="bg-linear-to-r from-blue-500 to-blue-600 rounded-3xl p-5 text-white">
-            <p class="text-[10px] font-semibold text-blue-100 uppercase tracking-wider mb-1">Jadwal Pemeriksaan</p>
-            <h2 class="text-lg font-bold">Pemeriksaan Ke-{{ $ancRecord->schedule->anc_number }}</h2>
-            <p class="text-sm opacity-90 mt-1">
-                {{ \Carbon\Carbon::parse($ancRecord->schedule->schedule_date)->translatedFormat('d F Y') }}
-            </p>
-            <p class="text-xs opacity-80 mt-1">
-                Disubmit: {{ $ancRecord->submitted_at?->translatedFormat('d F Y, H:i') }} WIB
-            </p>
-        </div>
+        <section class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
+                <i class="fa-regular fa-calendar text-blue-500 text-lg"></i>
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Tanggal Kunjungan</p>
+                <p class="text-sm font-bold text-gray-800 mt-0.5">
+                    {{ \Carbon\Carbon::parse($ancRecord->schedule->schedule_date)->translatedFormat('l, d F Y') }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                    Disubmit: {{ $ancRecord->submitted_at?->translatedFormat('d F Y, H:i') }} WIB
+                </p>
+            </div>
+        </section>
 
         {{-- Antropometri --}}
         <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-3">

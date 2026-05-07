@@ -4,9 +4,14 @@ namespace App\Http\Controllers\Midwife;
 
 use App\Http\Controllers\Controller;
 use App\Models\AncRecord;
+use App\Models\AncSchedule;
 use App\Models\DetectedCondition;
 use App\Models\MotherProfile;
+use App\Models\Pregnancy;
+use App\Models\TtdStatus;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
@@ -60,18 +65,32 @@ class PatientController extends Controller
             );
         }
 
+        $query->with([
+            'user',
+            'activePregnancy',
+            'subdistrict',
+            'area',
+            'ancRecords.detectedConditions',
+            'ancRecords.validation',
+        ]);
+
         $mothers = $query->get()->map(function ($m) {
-            $pregnancy = $m->activePregnancy;
-            $hasRisk   = $pregnancy ? DetectedCondition::where('status', 'detected')
-                ->whereHas('ancRecord', fn($q) => $q->where('mother_id', $m->id))
-                ->exists() : false;
-            $hasPending = $pregnancy ? AncRecord::where('mother_id', $m->id)
-                ->unlocked()->doesntHave('validation')->exists() : false;
+            $hasRisk = $m->ancRecords->contains(
+                fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
+            );
+            $hasPending = $m->ancRecords->contains(
+                fn($r) => !$r->is_locked && !$r->validation
+            );
 
             $m->status_flag = $hasRisk ? 'risiko' : ($hasPending ? 'validasi' : 'normal');
-            $m->conditions  = $hasRisk ? DetectedCondition::where('status', 'detected')
-                ->whereHas('ancRecord', fn($q) => $q->where('mother_id', $m->id))
-                ->pluck('condition_type')->toArray() : [];
+            $m->conditions  = $hasRisk
+                ? $m->ancRecords
+                ->flatMap(fn($r) => $r->detectedConditions->where('status', 'detected'))
+                ->pluck('condition_type')
+                ->unique()
+                ->values()
+                ->toArray()
+                : [];
             return $m;
         });
 
@@ -95,7 +114,10 @@ class PatientController extends Controller
     {
         $user = auth()->user();
 
-        abort_if($motherProfile->assigned_midwife_id !== $user->id, 403);
+        abort_if(
+            $motherProfile->assigned_midwife_id !== $user->id,
+            403
+        );
 
         $motherProfile->load([
             'user',
@@ -103,15 +125,201 @@ class PatientController extends Controller
             'area',
             'activePregnancy.ancSchedules.ancRecord.detectedConditions',
             'activePregnancy.ancSchedules.ancRecord.validation',
-            'activePregnancy.ttdStatus',
+            'activePregnancy.ttdStatus.logs',
         ]);
 
         $pregnancy = $motherProfile->activePregnancy;
 
+        $activeConditions = collect();
+
+        $ttdStatus = null;
+        $ttdTaken = 0;
+        $ttdTarget = 90;
+        $ttdPercentage = 0;
+        $ttdStartedWeek = null;
+
+        if ($pregnancy) {
+
+            foreach ($pregnancy->ancSchedules as $schedule) {
+
+                if ($schedule->ancRecord) {
+
+                    $activeConditions = $activeConditions->merge(
+                        $schedule->ancRecord->detectedConditions
+                            ->where('status', 'detected')
+                    );
+                }
+            }
+
+            $activeConditions = $activeConditions
+                ->unique('condition_type')
+                ->values();
+
+            $completedAnc = $pregnancy->ancSchedules
+                ->filter(fn($schedule) => $schedule->ancRecord?->is_locked)
+                ->count();
+
+            $progressPercentage = round(($completedAnc / 6) * 100);
+
+            $timeline = collect();
+
+            for ($i = 1; $i <= 6; $i++) {
+
+                $schedule = $pregnancy->ancSchedules
+                    ->firstWhere('anc_number', $i);
+
+                $record = $schedule?->ancRecord;
+
+                $hasRisk = $record?->detectedConditions
+                    ->where('status', 'detected')
+                    ->isNotEmpty() ?? false;
+
+                $hasPending = $record &&
+                    !$record->is_locked &&
+                    !$record->validation;
+
+                $isLocked = $record?->is_locked ?? false;
+
+                $isMissed = $schedule?->status === 'missed';
+
+                $isScheduled = $schedule && !$record && !$isMissed;
+
+                $timeline->push([
+                    'anc_number' => $i,
+                    'schedule' => $schedule,
+                    'record' => $record,
+                    'has_risk' => $hasRisk,
+                    'has_pending' => $hasPending,
+                    'is_locked' => $isLocked,
+                    'is_scheduled' => $isScheduled,
+                    'is_missed' => $isMissed,
+                    'need_usg' => in_array($i, [1, 5]),
+                ]);
+            }
+
+            // TTD
+            $ttdStatus = $pregnancy->ttdStatus;
+
+            $ttdTaken = $ttdStatus?->total_taken ?? 0;
+
+            $ttdPercentage = $ttdTarget > 0
+                ? min(round(($ttdTaken / $ttdTarget) * 100), 100)
+                : 0;
+
+            $ttdStartedWeek = null;
+
+            if ($ttdStatus?->started_at) {
+
+                $hpht = Carbon::parse($pregnancy->hpht_date);
+
+                $startedAt = Carbon::parse($ttdStatus->started_at);
+
+                $diffDays = $hpht->diffInDays($startedAt);
+
+                $ttdStartedWeek = (int) floor($diffDays / 7);
+            }
+        } else {
+
+            $completedAnc = 0;
+            $progressPercentage = 0;
+            $timeline = collect();
+        }
+
+        $conditionStyles = [
+            'preeclampsia' => [
+                'bg' => 'bg-red-100',
+                'text' => 'text-red-600',
+                'icon' => 'fa-heart-pulse',
+            ],
+
+            'kek' => [
+                'bg' => 'bg-orange-100',
+                'text' => 'text-orange-600',
+                'icon' => 'fa-weight-scale',
+            ],
+
+            'anemia' => [
+                'bg' => 'bg-yellow-100',
+                'text' => 'text-yellow-600',
+                'icon' => 'fa-droplet',
+            ],
+        ];
+
         return view('dashboard.midwife.patient-detail', compact(
             'user',
             'motherProfile',
-            'pregnancy'
+            'pregnancy',
+            'activeConditions',
+            'completedAnc',
+            'progressPercentage',
+            'timeline',
+            'conditionStyles',
+            'ttdStatus',
+            'ttdTaken',
+            'ttdTarget',
+            'ttdPercentage',
+            'ttdStartedWeek',
         ));
+    }
+
+    public function updateSchedule(Request $request, AncSchedule $schedule)
+    {
+        $request->validate([
+            'schedule_date' => ['required', 'date'],
+        ]);
+
+        $schedule->load('pregnancy.mother');
+
+        abort_if(
+            optional($schedule->pregnancy?->mother)->assigned_midwife_id !== auth()->id(),
+            403
+        );
+
+        if ($schedule->ancRecord) {
+            return back()->with('error', 'Jadwal yang sudah diisi tidak dapat diubah.');
+        }
+
+        DB::transaction(function () use ($schedule, $request) {
+
+            $schedule->update([
+                'schedule_date' => $request->schedule_date,
+            ]);
+        });
+
+        return back()->with('success', 'Jadwal ANC berhasil diperbarui.');
+    }
+
+    public function toggleTtd(Pregnancy $pregnancy)
+    {
+        abort_if(
+            $pregnancy->mother->assigned_midwife_id !== auth()->id(),
+            403
+        );
+
+        $ttdStatus = $pregnancy->ttdStatus;
+
+        if (!$ttdStatus) {
+
+            $ttdStatus = TtdStatus::create([
+                'pregnancy_id' => $pregnancy->id,
+                'is_active' => true,
+                'started_at' => now(),
+                'activated_by' => 'midwife',
+            ]);
+        } else {
+
+            $ttdStatus->update([
+                'is_active' => !$ttdStatus->is_active,
+                'started_at' => !$ttdStatus->is_active
+                    ? now()
+                    : $ttdStatus->started_at,
+                'activated_by' => 'midwife',
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_active' => $ttdStatus->fresh()->is_active,
+        ]);
     }
 }

@@ -65,14 +65,8 @@ class DashboardController extends Controller
         //     )->distinct('ancRecord.mother_id')->count();
 
         $riskCount = DetectedCondition::where('status', 'detected')
-            ->whereHas(
-                'ancRecord.mother',
-                fn($q) =>
-                $q->where('assigned_midwife_id', $user->id)
-            )
-            ->get()
-            ->pluck('ancRecord.mother_id')
-            ->unique()
+            ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
+            ->distinct('anc_record_id')
             ->count();
 
         // ANC pending validation — untuk tampil di dashboard
@@ -101,20 +95,14 @@ class DashboardController extends Controller
         })->take(3);
 
         // Ringkasan kondisi
-        $conditionSummary = [
-            'kek' => DetectedCondition::where('condition_type', 'kek')
-                ->where('status', 'detected')
-                ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
-                ->count(),
-            'preeclampsia' => DetectedCondition::where('condition_type', 'preeclampsia')
-                ->where('status', 'detected')
-                ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
-                ->count(),
-            'anemia' => DetectedCondition::where('condition_type', 'anemia')
-                ->where('status', 'detected')
-                ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
-                ->count(),
-        ];
+        $conditionSummary = DetectedCondition::where('status', 'detected')
+            ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
+            ->selectRaw('condition_type, COUNT(*) as count')
+            ->groupBy('condition_type')
+            ->pluck('count', 'condition_type')
+            ->toArray();
+
+        $conditionSummary = array_merge(['kek' => 0, 'preeclampsia' => 0, 'anemia' => 0], $conditionSummary);
 
         return view('dashboard.midwife.index', compact(
             'user',

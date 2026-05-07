@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-use function Symfony\Component\Clock\now;
-
 class AncValidation extends Model
 {
     protected $fillable = [

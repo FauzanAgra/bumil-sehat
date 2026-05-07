@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Midwife;
 use App\Http\Controllers\Controller;
 use App\Models\AncSchedule;
 use App\Models\MotherProfile;
-use App\Models\Pregnancy;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -82,38 +80,63 @@ class ScheduleController extends Controller
 
         $request->validate([
             'mother_profile_id' => ['required', 'exists:mother_profiles,id'],
-            'anc_number'        => ['required', 'integer', 'min:1', 'max:6'],
-            'schedule_date'     => ['required', 'date', 'after_or_equal:today'],
-            'schedule_time'     => ['nullable', 'date_format:H:i'],
-            'note'              => ['nullable', 'string', 'max:255'],
+            'anc_number' => ['required', 'integer', 'min:1', 'max:6'],
+            'schedule_date' => ['required', 'date', 'after_or_equal:today'],
+            'schedule_time' => ['nullable', 'date_format:H:i'],
+            'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $mother    = MotherProfile::findOrFail($request->mother_profile_id);
+        $mother = MotherProfile::findOrFail(
+            $request->mother_profile_id
+        );
+
         $pregnancy = $mother->activePregnancy;
 
-        abort_if(!$pregnancy, 404, 'Tidak ada kehamilan aktif.');
-        abort_if($mother->assigned_midwife_id !== $user->id, 403);
+        abort_if(
+            !$pregnancy,
+            404,
+            'Tidak ada kehamilan aktif.'
+        );
 
-        // Cek duplikat
+        abort_if(
+            $mother->assigned_midwife_id !== $user->id,
+            403
+        );
+
+        // Cek duplicate ANC
         $exists = $pregnancy->ancSchedules()
             ->where('anc_number', $request->anc_number)
             ->exists();
 
         if ($exists) {
-            return back()->withInput()
-                ->withErrors(['anc_number' => 'Jadwal ANC ke-' . $request->anc_number . ' sudah ada.']);
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'anc_number' =>
+                    'Jadwal ANC ke-' .
+                        $request->anc_number .
+                        ' sudah ada.'
+                ]);
         }
 
+        // Create ANC
         $pregnancy->ancSchedules()->create([
-            'anc_number'    => $request->anc_number,
+            'anc_number' => $request->anc_number,
             'schedule_date' => $request->schedule_date,
             'schedule_time' => $request->schedule_time,
-            'note'          => $request->note,
-            'status'        => 'scheduled',
-            'created_by'    => $user->id,
+            'note' => $request->note,
+            'status' => 'scheduled',
+            'created_by' => $user->id,
         ]);
 
-        return redirect()->route('midwife.schedules')
-            ->with('success', 'Jadwal ANC ke-' . $request->anc_number . ' berhasil dibuat.');
+        return redirect()
+            ->route('midwife.schedules')
+            ->with(
+                'success',
+                'Jadwal ANC ke-' .
+                    $request->anc_number .
+                    ' berhasil dibuat.'
+            );
     }
 }

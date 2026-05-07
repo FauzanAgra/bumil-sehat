@@ -2,12 +2,9 @@
 
 namespace App\Models;
 
-use GuzzleHttp\Psr7\Query;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-use function Symfony\Component\Clock\now;
 
 class DetectedCondition extends Model
 {
@@ -17,7 +14,8 @@ class DetectedCondition extends Model
         'status',
         'notes',
         'detected_at',
-        'validated_by'
+        'validated_by',
+        'validated_at'
     ];
 
     protected function casts(): array

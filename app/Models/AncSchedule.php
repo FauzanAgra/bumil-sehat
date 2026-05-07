@@ -54,14 +54,14 @@ class AncSchedule extends Model
     public function scopeUpComing(Builder $query): Builder
     {
         return $query->where('status', 'scheduled')
-            ->where('scheduled_date', '>=', today())
-            ->orderBy('scheduled_date');
+            ->where('schedule_date', '>=', today())
+            ->orderBy('schedule_date');
     }
 
     public function scopeOverdue(Builder $query): Builder
     {
         return $query->where('status', 'scheduled')
-            ->where('scheduled_date', '<', today());
+            ->where('schedule_date', '<', today());
     }
 
     // Helper

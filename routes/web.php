@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/schedules', [MidwifeSchedule::class, 'index'])->name('schedules');
         Route::get('/schedules/create', [MidwifeSchedule::class, 'create'])->name('schedules.create');
         Route::post('/schedules', [MidwifeSchedule::class, 'store'])->name('schedules.store');
+        Route::put('/schedules/{schedule}', [MidwifePatient::class, 'updateSchedule'])->name('schedules.update');
 
         Route::get('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'show'])->name('anc.validate');
         Route::post('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'validate'])->name('anc.validate.store');
@@ -125,6 +126,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/setting', function () {
             return view('dashboard.midwife.setting', ['user' => auth()->user()]);
         })->name('setting');
+
+        Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])->name('pregnancies.toggle-ttd');
     });
+
     Route::get('/doctor/dashboard', fn() => 'Doctor Dashboard')->name('doctor.dashboard');
 });

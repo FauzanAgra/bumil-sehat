@@ -60,63 +60,133 @@
             </section>
         @endif
 
-        {{-- Data Profesi --}}
+        {{-- Data Diri --}}
         <section class="space-y-3">
-            <h3 class="text-sm font-bold text-gray-700 px-1">Data Profesi</h3>
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-sm font-bold text-gray-700">Data Diri</h3>
+                <a href="{{ route('midwife.setting') }}" class="text-xs text-rose-500 font-semibold hover:text-rose-700">
+                    Edit
+                </a>
+            </div>
             <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <div class="flex items-center justify-between px-5 py-4 text-sm border-b border-gray-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
-                            <i class="fa-solid fa-id-badge text-xs"></i>
+                @foreach ([['icon' => 'fa-user', 'label' => 'Nama Lengkap', 'value' => $user->name], ['icon' => 'fa-phone', 'label' => 'Nomor HP', 'value' => $user->phone], ['icon' => 'fa-envelope', 'label' => 'Email', 'value' => $user->email ?? '—']] as $item)
+                    <div class="flex items-center justify-between px-5 py-4 text-sm border-b border-gray-100 last:border-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
+                                <i class="fa-solid {{ $item['icon'] }} text-xs"></i>
+                            </div>
+                            <span class="text-gray-500">{{ $item['label'] }}</span>
                         </div>
-                        <span class="text-gray-500">No. STR/SIP</span>
+                        <span class="font-semibold text-gray-800 text-right max-w-[55%] truncate">
+                            {{ $item['value'] }}
+                        </span>
                     </div>
-                    <span class="font-semibold text-gray-700">
-                        {{ $user->medicalProfile?->license_number ?? '—' }}
-                    </span>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- Identitas Profesional --}}
+        @if ($user->medicalProfile)
+            <section class="space-y-3">
+                <h3 class="text-sm font-bold text-gray-700 px-1">Identitas Profesional</h3>
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    @foreach ([['icon' => 'fa-id-card', 'label' => 'No. STR / SIP', 'value' => $user->medicalProfile->license_number], ['icon' => 'fa-graduation-cap', 'label' => 'Gelar', 'value' => trim(($user->medicalProfile->degree_prefix ?? '') . ' ' . ($user->medicalProfile->degree_suffix ?? '')) ?: '—'], ['icon' => 'fa-clock', 'label' => 'Jam Praktik', 'value' => $user->medicalProfile->availability ?? '—']] as $item)
+                        <div
+                            class="flex items-center justify-between px-5 py-4 text-sm border-b border-gray-100 last:border-0">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center text-blue-400">
+                                    <i class="fa-solid {{ $item['icon'] }} text-xs"></i>
+                                </div>
+                                <span class="text-gray-500">{{ $item['label'] }}</span>
+                            </div>
+                            <span class="font-semibold text-gray-800 text-right max-w-[55%] truncate">
+                                {{ $item['value'] }}
+                            </span>
+                        </div>
+                    @endforeach
                 </div>
-                <div class="flex items-center justify-between px-5 py-4 text-sm border-b border-gray-100">
+            </section>
+        @endif
+
+        {{-- Keamanan Akun --}}
+        <section class="space-y-3">
+            <h3 class="text-sm font-bold text-gray-700 px-1">Keamanan Akun</h3>
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <a href="#" {{-- ganti dengan route ubah password ketika sudah dibuat --}}
+                    class="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
-                            <i class="fa-solid fa-phone text-xs"></i>
+                        <div class="w-8 h-8 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-400">
+                            <i class="fa-solid fa-lock text-xs"></i>
                         </div>
-                        <span class="text-gray-500">No. HP</span>
+                        <span class="text-sm text-gray-700">Ubah Password</span>
                     </div>
-                    <span class="font-semibold text-gray-700">{{ $user->phone }}</span>
+                    <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                </a>
+            </div>
+        </section>
+
+        {{-- Bantuan --}}
+        <section class="space-y-3">
+            <h3 class="text-sm font-bold text-gray-700 px-1">Bantuan</h3>
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center text-purple-400">
+                            <i class="fa-solid fa-circle-question text-xs"></i>
+                        </div>
+                        <span class="text-sm text-gray-700">Panduan Penggunaan</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
                 </div>
-                <div class="flex items-center justify-between px-5 py-4 text-sm">
+                <div class="flex items-center justify-between px-5 py-4 border-t border-gray-100">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
-                            <i class="fa-regular fa-clock text-xs"></i>
+                        <div class="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center text-green-400">
+                            <i class="fa-brands fa-whatsapp text-xs"></i>
                         </div>
-                        <span class="text-gray-500">Jam Tersedia</span>
+                        <span class="text-sm text-gray-700">Hubungi Admin</span>
                     </div>
-                    <span class="font-semibold text-gray-700 text-right max-w-40 leading-snug">
-                        {{ $user->medicalProfile?->availability ?? '—' }}
-                    </span>
+                    <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
                 </div>
             </div>
         </section>
 
         {{-- Keluar --}}
-        <section>
+        <section class="space-y-3">
             <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <button type="button" onclick="document.getElementById('logoutModal').classList.remove('hidden')"
+                    class="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-50 transition text-left">
+                    <div class="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center text-red-400">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    </div>
+                    <span class="text-sm font-semibold text-red-500">Keluar</span>
+                </button>
+            </div>
+        </section>
+
+        {{-- Logout Modal --}}
+        <div id="logoutModal"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-[999] hidden">
+            <div class="bg-white w-full max-w-md rounded-t-[2rem] p-6 space-y-4">
+                <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mx-auto">
+                    <i class="fa-solid fa-right-from-bracket text-red-500 text-lg"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-800 text-center mt-2">Keluar dari Akun?</h3>
+                <p class="text-xs text-gray-500 text-center leading-relaxed">
+                    Kamu akan keluar dari sesi ini. Data yang belum disimpan akan hilang.
+                </p>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit"
-                        class="w-full flex items-center justify-between px-5 py-4 text-sm text-red-500 hover:bg-red-50 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center text-red-400">
-                                <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                            </div>
-                            <span class="font-semibold">Keluar</span>
-                        </div>
+                        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-2xl transition mb-2">
+                        Ya, Keluar
                     </button>
                 </form>
+                <button onclick="document.getElementById('logoutModal').classList.add('hidden')"
+                    class="w-full bg-gray-100 text-gray-600 font-semibold py-3.5 rounded-2xl hover:bg-gray-200 transition">
+                    Batal
+                </button>
             </div>
-            <p class="text-center text-[10px] text-gray-300 pt-3">BumilSehat v1.0.0</p>
-        </section>
-
+        </div>
     </main>
 
 @endsection
