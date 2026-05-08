@@ -11,6 +11,7 @@ use App\Http\Controllers\Midwife\DashboardController as MidwifeDashboard;
 use App\Http\Controllers\Midwife\PatientController as MidwifePatient;
 use App\Http\Controllers\Midwife\ScheduleController as MidwifeSchedule;
 use App\Http\Controllers\Midwife\ValidationController as MidwifeValidation;
+use App\Http\Controllers\Midwife\ProfileController as MidwifeSetting;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -122,10 +123,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'show'])->name('anc.validate');
         Route::post('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'validate'])->name('anc.validate.store');
 
-        // Setting — reuse ProfileController pattern
-        Route::get('/setting', function () {
-            return view('dashboard.midwife.setting', ['user' => auth()->user()]);
-        })->name('setting');
+        Route::get('/setting', [MidwifeSetting::class, 'show'])->name('setting');
 
         Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])->name('pregnancies.toggle-ttd');
     });

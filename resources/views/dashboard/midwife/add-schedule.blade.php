@@ -60,8 +60,7 @@
                         @endphp
 
                         <button type="button"
-                            onclick="selectPatient({{ $m->id }},'{{ $m->user->name }}',{{ $m->activePregnancy?->gestational_week ?? 0 }},{{ $completedAnc }},
-                        this)"
+                            onclick="selectPatient({{ $m->id }}, '{{ $m->user->name }}', {{ $m->activePregnancy?->gestational_week ?? 0 }}, {{ $completedAnc }}, {{ $m->has_risk ? 'true' : 'false' }}, this)"
                             class="patient-card w-full bg-white border {{ $isSelected ? 'border-rose-400 bg-rose-50' : 'border-gray-100' }}
                     rounded-3xl p-4 flex items-center gap-3 hover:border-rose-300 hover:shadow-md transition text-left">
 
@@ -93,6 +92,13 @@
                         </span>
                     </p>
                 </div>
+
+                <div id="riskBanner" class="hidden bg-red-50 border border-red-200 rounded-2xl p-3 flex gap-2 items-start">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400 text-xs mt-0.5 shrink-0"></i>
+                    <p class="text-xs text-red-600 leading-relaxed">
+                        Pasien ini memiliki kondisi risiko aktif. Pertimbangkan interval kunjungan yang lebih dekat.
+                    </p>
+                </div>
             </section>
 
             {{-- Step 2 --}}
@@ -117,6 +123,14 @@
                             {{ $i }}
                         </button>
                     @endfor
+                </div>
+
+                <div id="usgNoteBanner"
+                    class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-3 flex gap-2 items-start">
+                    <i class="fa-solid fa-circle-info text-blue-400 text-xs mt-0.5 shrink-0"></i>
+                    <p class="text-xs text-blue-600 leading-relaxed">
+                        <strong id="usgNoteText"></strong> Ingatkan ibu untuk mempersiapkan hasil USG saat kunjungan.
+                    </p>
                 </div>
                 <input type="hidden" name="anc_number" id="selectedAncNumber" value="{{ old('anc_number') }}">
                 <p id="ancInfo" class="text-[11px] text-gray-400 px-1"></p>
@@ -152,8 +166,16 @@
                                 (opsional)
                             </span>
                         </label>
-                        <input type="time" name="schedule_time" value="{{ old('schedule_time') }}"
+                        <select name="schedule_time"
                             class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none text-sm">
+                            <option value="">— Opsional —</option>
+                            @foreach (['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'] as $time)
+                                <option value="{{ $time }}"
+                                    {{ old('schedule_time') === $time ? 'selected' : '' }}>
+                                    {{ $time }} WIB
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                 </div>
@@ -205,30 +227,18 @@
             });
         }
 
-        function selectPatient(
-            id,
-            name,
-            week,
-            completedAnc,
-            btn
-        ) {
+        function selectPatient(id, name, week, completedAnc, hasRisk, btn) {
             document.getElementById('selectedMotherId').value = id;
-
             document.getElementById('selectedName').textContent = name;
-
-            document.getElementById('selectedPreview')
-                .classList.remove('hidden');
-
+            document.getElementById('selectedPreview').classList.remove('hidden');
+            document.getElementById('riskBanner').classList.toggle('hidden', !hasRisk);
             // Style selected
             allPatients.forEach(card => {
-
                 card.classList.remove(
                     'border-rose-400',
                     'bg-rose-50'
                 );
-
                 card.classList.add('border-gray-100');
-
             });
 
             btn.classList.add(
@@ -279,30 +289,12 @@
             document.getElementById('selectedAncNumber').value = num;
 
             document.querySelectorAll('.anc-btn').forEach(button => {
-
-                button.classList.remove(
-                    'border-rose-500',
-                    'bg-rose-50',
-                    'text-rose-500'
-                );
-
-                button.classList.add(
-                    'border-gray-200',
-                    'text-gray-500'
-                );
-
+                button.classList.remove('border-rose-500', 'bg-rose-50', 'text-rose-500');
+                button.classList.add('border-gray-200', 'text-gray-500');
             });
 
-            btn.classList.add(
-                'border-rose-500',
-                'bg-rose-50',
-                'text-rose-500'
-            );
-
-            btn.classList.remove(
-                'border-gray-200',
-                'text-gray-500'
-            );
+            btn.classList.add('border-rose-500', 'bg-rose-50', 'text-rose-500');
+            btn.classList.remove('border-gray-200', 'text-gray-500');
 
             const isUsg = [1, 5].includes(num);
 
@@ -310,6 +302,15 @@
                 isUsg ?
                 '📷 ANC ke-' + num + ' wajib menyertakan foto USG.' :
                 '';
+
+            const banner = document.getElementById('usgNoteBanner');
+            const noteText = document.getElementById('usgNoteText');
+            if ([1, 5].includes(num)) {
+                noteText.textContent = `ANC ke-${num} wajib USG.`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
         }
 
         // Restore old state

@@ -610,6 +610,16 @@
                         <input type="date" name="schedule_date" id="editScheduleDate"
                             class="w-full px-4 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-700">
                     </div>
+                    <div class="space-y-1.5 mt-4">
+                        <label class="text-xs font-bold text-gray-500 px-1">Jam Kunjungan</label>
+                        <select name="schedule_time" id="editScheduleTime"
+                            class="w-full px-4 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-700">
+                            <option value="">— Opsional —</option>
+                            @foreach (['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'] as $time)
+                                <option value="{{ $time }}">{{ $time }} WIB</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="space-y-3 pt-4">
                         <button type="submit"
                             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3.5 rounded-2xl transition">
@@ -629,11 +639,13 @@
 
 @push('scripts')
     <script>
-        function openEditModal(scheduleId, date, ancNumber) {
+        function openEditModal(scheduleId, date, ancNumber, currentTime) {
             document.getElementById('editModal').classList.remove('hidden');
             document.getElementById('editAncLabel').innerText = `ANC ke-${ancNumber}`;
             document.getElementById('editScheduleDate').value = date;
             document.getElementById('editForm').action = `/midwife/schedules/${scheduleId}`;
+            const timeSelect = document.getElementById('editScheduleTime');
+            if (timeSelect && currentTime) timeSelect.value = currentTime;
         }
 
         function closeEditModal() {

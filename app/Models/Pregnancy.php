@@ -58,7 +58,7 @@ class Pregnancy extends Model
         return $query->where('status', 'active');
     }
 
-    // Hellper
+    // Helper
     public function getGestationalWeekAttribute(): int
     {
         return (int) $this->hpht_date->diffInWeeks(now());
@@ -75,9 +75,13 @@ class Pregnancy extends Model
 
     public function getCompletedAncCountAttribute(): int
     {
-        return $this->ancSchedules()
-            ->where('status', 'done')
-            ->count();
+        // Kalau relasi sudah di-eager load, gunakan dari cache
+        if ($this->relationLoaded('ancSchedules')) {
+            return $this->ancSchedules->where('status', 'done')->count();
+        }
+
+        // Fallback ke query
+        return $this->ancSchedules()->where('status', 'done')->count();
     }
 
     public function isActive(): bool

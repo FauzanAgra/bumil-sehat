@@ -27,6 +27,7 @@ class AncRecord extends Model
         'fetal_position',
         'fetal_heart_rate',
         'is_locked',
+        'submitted_at'
     ];
 
     protected function casts(): array
@@ -127,6 +128,45 @@ class AncRecord extends Model
         }
     }
 
+    public function detectConditionsIfNoFinalDecision(): void
+    {
+        // Ambil kondisi yang sudah ada keputusan final (confirmed/rejected)
+        $finalConditions = $this->detectedConditions()
+            ->whereIn('status', ['confirmed', 'rejected'])
+            ->pluck('condition_type')
+            ->toArray();
+
+        // KEK
+        if ($this->lila !== null && $this->lila < 23.5 && !in_array('kek', $finalConditions)) {
+            $this->detectedConditions()->firstOrCreate(
+                ['condition_type' => 'kek'],
+                ['status' => 'detected', 'detected_at' => now()]
+            );
+        }
+
+        // Preeklampsia
+        if ((($this->systolic !== null && $this->systolic >= 140) ||
+                ($this->diastolic !== null && $this->diastolic >= 90))
+            && !in_array('preeclampsia', $finalConditions)
+        ) {
+            $this->detectedConditions()->firstOrCreate(
+                ['condition_type' => 'preeclampsia'],
+                ['status' => 'detected', 'detected_at' => now()]
+            );
+        }
+
+        // Anemia
+        if (
+            $this->hb !== null && $this->hb < 11.0
+            && !in_array('anemia', $finalConditions)
+        ) {
+            $this->detectedConditions()->firstOrCreate(
+                ['condition_type' => 'anemia'],
+                ['status' => 'detected', 'detected_at' => now()]
+            );
+        }
+    }
+
     // Helper
     public function isLocked(): bool
     {
@@ -161,13 +201,15 @@ class AncRecord extends Model
         });
 
         static::updated(function (AncRecord $record) {
-            // Hapus kondisi lama yang belum dikonfirmasi bidan
+            // Hanya hapus kondisi 'detected' yang belum disentuh bidan
+            // Kondisi 'confirmed' dan 'rejected' tidak disentuh
             $record->detectedConditions()
                 ->where('status', 'detected')
                 ->delete();
 
-            // Deteksi ulang berdasarkan data terbaru
-            $record->detectConditions();
+            // Deteksi ulang — tapi jangan override kondisi yang sudah pernah ada
+            // (baik confirmed maupun rejected) karena keputusan bidan bersifat final
+            $record->detectConditionsIfNoFinalDecision();
         });
 
         static::updating(function (AncRecord $record) {

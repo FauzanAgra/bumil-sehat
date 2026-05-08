@@ -64,7 +64,7 @@
         <section class="space-y-3">
             <div class="flex items-center justify-between px-1">
                 <h3 class="text-sm font-bold text-gray-700">Data Diri</h3>
-                <a href="{{ route('midwife.setting') }}" class="text-xs text-rose-500 font-semibold hover:text-rose-700">
+                <a href="..." class="text-xs text-rose-500 font-semibold hover:text-rose-700">
                     Edit
                 </a>
             </div>

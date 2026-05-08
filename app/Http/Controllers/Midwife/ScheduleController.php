@@ -57,9 +57,19 @@ class ScheduleController extends Controller
         $user = auth()->user();
 
         $mothers = MotherProfile::where('assigned_midwife_id', $user->id)
-            ->with(['user', 'activePregnancy.ancSchedules'])
+            ->with([
+                'user',
+                'activePregnancy.ancSchedules',
+                'ancRecords.detectedConditions',  // ← tambahkan
+            ])
             ->get()
             ->filter(fn($m) => $m->activePregnancy)
+            ->map(function ($m) {
+                $m->has_risk = $m->ancRecords->contains(
+                    fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
+                );
+                return $m;
+            })
             ->values();
 
         $selectedMother = null;
@@ -79,16 +89,16 @@ class ScheduleController extends Controller
         $user = auth()->user();
 
         $request->validate([
-            'mother_profile_id' => ['required', 'exists:mother_profiles,id'],
+            'mother_profile_id' => ['required', 'integer', 'exists:mother_profiles,id'],
             'anc_number' => ['required', 'integer', 'min:1', 'max:6'],
             'schedule_date' => ['required', 'date', 'after_or_equal:today'],
             'schedule_time' => ['nullable', 'date_format:H:i'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $mother = MotherProfile::findOrFail(
-            $request->mother_profile_id
-        );
+        $mother = MotherProfile::where('id', $request->mother_profile_id)
+            ->where('assigned_midwife_id', $user->id)  // ← cek sekaligus
+            ->firstOrFail();
 
         $pregnancy = $mother->activePregnancy;
 

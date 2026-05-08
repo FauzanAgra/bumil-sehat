@@ -29,7 +29,6 @@ class AncController extends Controller
             ->where('schedule_date', '>=', today()->toDateString())
             ->sortBy('schedule_date')
             ->first();
-        // dd($nextSchedule->toArray());
 
         return view('dashboard.mother.anc-history', compact(
             'user',
@@ -133,6 +132,7 @@ class AncController extends Controller
         $data['schedule_id']  = $schedule->id;
         $data['mother_id']    = $motherProfile->id;
         $data['recorded_by']  = $user->id;
+        $data['submitted_at'] = now();
 
         // Update atau buat baru
         $record = $schedule->ancRecord ? tap($schedule->ancRecord)->update($data) : AncRecord::create($data);

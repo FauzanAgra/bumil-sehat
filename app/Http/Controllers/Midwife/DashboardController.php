@@ -35,7 +35,12 @@ class DashboardController extends Controller
 
         // Ibu dampingan
         $mothers = MotherProfile::where('assigned_midwife_id', $user->id)
-            ->with(['activePregnancy.ancSchedules', 'user'])
+            ->with([
+                'user',
+                'activePregnancy.ancSchedules',
+                'ancRecords.detectedConditions',
+                'ancRecords.validation',
+            ])
             ->get();
 
         $totalMothers = $mothers->count();
@@ -57,13 +62,6 @@ class DashboardController extends Controller
         )->unlocked()->doesntHave('validation')->count();
 
         // Kondisi risiko belum dikonfirmasi
-        // $riskCount = DetectedCondition::where('status', 'detected')
-        //     ->whereHas(
-        //         'ancRecord.mother',
-        //         fn($q) =>
-        //         $q->where('assigned_midwife_id', $user->id)
-        //     )->distinct('ancRecord.mother_id')->count();
-
         $riskCount = DetectedCondition::where('status', 'detected')
             ->whereHas('ancRecord.mother', fn($q) => $q->where('assigned_midwife_id', $user->id))
             ->distinct('anc_record_id')
@@ -82,17 +80,31 @@ class DashboardController extends Controller
 
         // Ibu preview — 3 dengan prioritas (risiko dulu, validasi, normal)
         $motherPreview = $mothers->sortByDesc(function ($m) {
-            $pregnancy = $m->activePregnancy;
-            if (!$pregnancy) return 0;
-            $hasRisk      = DetectedCondition::where('status', 'detected')
-                ->whereHas('ancRecord', fn($q) => $q->where('mother_id', $m->id))
-                ->exists();
-            $hasPending   = AncRecord::where('mother_id', $m->id)
-                ->unlocked()->doesntHave('validation')->exists();
+            if (!$m->activePregnancy) return 0;
+
+            $hasRisk = $m->ancRecords->contains(
+                fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
+            );
+            $hasPending = $m->ancRecords->contains(
+                fn($r) => !$r->is_locked && !$r->validation
+            );
+
             if ($hasRisk)    return 3;
             if ($hasPending) return 2;
             return 1;
         })->take(3);
+
+        // Tambahkan status_flag ke motherPreview supaya bisa dipakai di blade
+        $motherPreview = $motherPreview->map(function ($m) {
+            $hasRisk = $m->ancRecords->contains(
+                fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
+            );
+            $hasPending = $m->ancRecords->contains(
+                fn($r) => !$r->is_locked && !$r->validation
+            );
+            $m->status_flag = $hasRisk ? 'risiko' : ($hasPending ? 'validasi' : 'normal');
+            return $m;
+        });
 
         // Ringkasan kondisi
         $conditionSummary = DetectedCondition::where('status', 'detected')

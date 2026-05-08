@@ -266,6 +266,7 @@ class PatientController extends Controller
     {
         $request->validate([
             'schedule_date' => ['required', 'date'],
+            'schedule_time' => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00']
         ]);
 
         $schedule->load('pregnancy.mother');
@@ -283,6 +284,7 @@ class PatientController extends Controller
 
             $schedule->update([
                 'schedule_date' => $request->schedule_date,
+                'schedule_time' => $request->schedule_time,
             ]);
         });
 
