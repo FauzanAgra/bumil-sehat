@@ -17,8 +17,7 @@ class ScheduleController extends Controller
         $query = AncSchedule::whereHas('pregnancy', function ($q) use ($user) {
             $q->whereHas(
                 'mother',
-                fn($q2) =>
-                $q2->where('assigned_midwife_id', $user->id)
+                fn($q2) => $q2->where('assigned_midwife_id', $user->id)
             );
         })->with(['pregnancy.mother.user', 'ancRecord.detectedConditions']);
 
@@ -31,16 +30,14 @@ class ScheduleController extends Controller
 
         $schedules = $query->orderBy('schedule_date')->orderBy('schedule_time')->get();
 
-        // Summary
+        // Summary dari collection — tidak ada query tambahan
         $summary = [
-            'validasi'     => $schedules->filter(
-                fn($s) =>
-                $s->ancRecord && !$s->ancRecord->is_locked && !$s->ancRecord->validation
+            'validasi'    => $schedules->filter(
+                fn($s) => $s->ancRecord && ! $s->ancRecord->is_locked && ! $s->ancRecord->validation
             )->count(),
-            'belum_input'  => $schedules->filter(fn($s) => !$s->ancRecord)->count(),
-            'risiko'       => $schedules->filter(
-                fn($s) =>
-                $s->ancRecord?->detectedConditions->where('status', 'detected')->isNotEmpty()
+            'belum_input' => $schedules->filter(fn($s) => ! $s->ancRecord)->count(),
+            'risiko'      => $schedules->filter(
+                fn($s) => $s->ancRecord?->detectedConditions->where('status', 'detected')->isNotEmpty()
             )->count(),
         ];
 
@@ -52,6 +49,10 @@ class ScheduleController extends Controller
         ));
     }
 
+    /**
+     * Fix B4: Eager load detectedConditions supaya has_risk bisa dihitung
+     * di collection tanpa N+1 query.
+     */
     public function create(Request $request)
     {
         $user = auth()->user();
@@ -60,11 +61,12 @@ class ScheduleController extends Controller
             ->with([
                 'user',
                 'activePregnancy.ancSchedules',
-                'ancRecords.detectedConditions',  // ← tambahkan
+                'ancRecords.detectedConditions', // ← untuk has_risk
             ])
             ->get()
             ->filter(fn($m) => $m->activePregnancy)
             ->map(function ($m) {
+                // Tandai apakah ibu punya kondisi risiko aktif
                 $m->has_risk = $m->ancRecords->contains(
                     fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
                 );
@@ -84,69 +86,59 @@ class ScheduleController extends Controller
         ));
     }
 
+    /**
+     * Fix A5: Authorization check sekaligus saat query (bukan setelah findOrFail),
+     * lebih efisien dan semantically correct.
+     */
     public function store(Request $request)
     {
         $user = auth()->user();
 
         $request->validate([
-            'mother_profile_id' => ['required', 'integer', 'exists:mother_profiles,id'],
-            'anc_number' => ['required', 'integer', 'min:1', 'max:6'],
-            'schedule_date' => ['required', 'date', 'after_or_equal:today'],
-            'schedule_time' => ['nullable', 'date_format:H:i'],
-            'note' => ['nullable', 'string', 'max:255'],
+            'mother_profile_id' => ['required', 'integer'],
+            'anc_number'        => ['required', 'integer', 'min:1', 'max:6'],
+            'schedule_date'     => ['required', 'date', 'after_or_equal:today'],
+            'schedule_time'     => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00'],
+            'note'              => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Fix A5: cek ownership sekaligus — 1 query, langsung 404 jika tidak valid
         $mother = MotherProfile::where('id', $request->mother_profile_id)
-            ->where('assigned_midwife_id', $user->id)  // ← cek sekaligus
+            ->where('assigned_midwife_id', $user->id)
             ->firstOrFail();
 
         $pregnancy = $mother->activePregnancy;
 
         abort_if(
-            !$pregnancy,
+            ! $pregnancy,
             404,
-            'Tidak ada kehamilan aktif.'
+            'Tidak ada kehamilan aktif untuk ibu ini.'
         );
 
-        abort_if(
-            $mother->assigned_midwife_id !== $user->id,
-            403
-        );
-
-        // Cek duplicate ANC
+        // Cek duplikat ANC
         $exists = $pregnancy->ancSchedules()
             ->where('anc_number', $request->anc_number)
             ->exists();
 
         if ($exists) {
-
             return back()
                 ->withInput()
                 ->withErrors([
-                    'anc_number' =>
-                    'Jadwal ANC ke-' .
-                        $request->anc_number .
-                        ' sudah ada.'
+                    'anc_number' => 'Jadwal ANC ke-' . $request->anc_number . ' sudah ada.',
                 ]);
         }
 
-        // Create ANC
         $pregnancy->ancSchedules()->create([
-            'anc_number' => $request->anc_number,
+            'anc_number'    => $request->anc_number,
             'schedule_date' => $request->schedule_date,
             'schedule_time' => $request->schedule_time,
-            'note' => $request->note,
-            'status' => 'scheduled',
-            'created_by' => $user->id,
+            'note'          => $request->note,
+            'status'        => 'scheduled',
+            'created_by'    => $user->id,
         ]);
 
         return redirect()
             ->route('midwife.schedules')
-            ->with(
-                'success',
-                'Jadwal ANC ke-' .
-                    $request->anc_number .
-                    ' berhasil dibuat.'
-            );
+            ->with('success', 'Jadwal ANC ke-' . $request->anc_number . ' berhasil dibuat.');
     }
 }

@@ -29,8 +29,8 @@
                 class="{{ request()->routeIs('midwife.patients*') ? 'active-nav' : 'text-gray-300 hover:text-rose-400 transition-colors' }}">
                 <i class="fa-solid fa-people-group text-xl"></i>
             </a>
-            <a href="{{ route('midwife.setting') }}"
-                class="{{ request()->routeIs('midwife.setting') ? 'active-nav' : 'text-gray-300 hover:text-rose-400 transition-colors' }}">
+            <a href="{{ route('midwife.profile.setting') }}"
+                class="{{ request()->routeIs('midwife.profile*') ? 'active-nav' : 'text-gray-300 hover:text-rose-400 transition-colors' }}">
                 <i class="fa-solid fa-gear text-xl"></i>
             </a>
         </nav>

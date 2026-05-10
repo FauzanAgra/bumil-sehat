@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Mother\DashboardController;
+use App\Http\Controllers\Mother\DashboardController as MotherDashboard;
 use App\Http\Controllers\Mother\AncController;
 use App\Http\Controllers\Mother\ArticleController;
 use App\Http\Controllers\Mother\ProfileController;
@@ -13,8 +13,11 @@ use App\Http\Controllers\Midwife\ScheduleController as MidwifeSchedule;
 use App\Http\Controllers\Midwife\ValidationController as MidwifeValidation;
 use App\Http\Controllers\Midwife\ProfileController as MidwifeSetting;
 
+use App\Http\Controllers\Doctor\DashboardController as DoctorDashboard;
+use App\Http\Controllers\Doctor\PatientController as DoctorPatient;
+use App\Http\Controllers\Doctor\ProfileController as DoctorSetting;
+
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // ── Guest ─────────────────────────────────────────────────────────────────────
@@ -54,7 +57,7 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard placeholder
     Route::prefix('mother')->name('mother.')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [MotherDashboard::class, 'index'])->name('dashboard');
 
         // ANC
         Route::prefix('anc')->name('anc.')->controller(AncController::class)->group(function () {
@@ -108,7 +111,6 @@ Route::middleware('auth')->group(function () {
         });
     });
 
-
     Route::prefix('midwife')->name('midwife.')->group(function () {
         Route::get('/dashboard', [MidwifeDashboard::class, 'index'])->name('dashboard');
 
@@ -123,10 +125,31 @@ Route::middleware('auth')->group(function () {
         Route::get('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'show'])->name('anc.validate');
         Route::post('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'validate'])->name('anc.validate.store');
 
-        Route::get('/setting', [MidwifeSetting::class, 'show'])->name('setting');
+        Route::prefix('profile')->name('profile.')->controller(MidwifeSetting::class)->group(function () {
+            Route::get('/setting',           'show')->name('setting');
+            Route::get('/edit',              'edit')->name('edit');
+            Route::post('/edit',             'update')->name('update');
+            Route::get('/password',          'changePassword')->name('password');
+            Route::post('/password',         'updatePassword')->name('password.update');
+        });
 
         Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])->name('pregnancies.toggle-ttd');
     });
 
-    Route::get('/doctor/dashboard', fn() => 'Doctor Dashboard')->name('doctor.dashboard');
+    Route::prefix('doctor')->name('doctor.')->group(function () {
+        Route::get('/dashboard', [DoctorDashboard::class, 'index'])->name('dashboard');
+
+        Route::get('/patients', [DoctorPatient::class, 'index'])->name('patients');
+        Route::get('/patients/{motherProfile}', [DoctorPatient::class, 'show'])->name('patients.show');
+        Route::post('/patients/{motherProfile}/recommend', [DoctorPatient::class, 'storeRecommendation'])
+            ->name('patients.recommend');
+
+        Route::prefix('profile')->name('profile.')->controller(DoctorSetting::class)->group(function () {
+            Route::get('/setting',           'show')->name('setting');
+            Route::get('/edit',              'edit')->name('edit');
+            Route::post('/edit',             'update')->name('update');
+            Route::get('/password',          'changePassword')->name('password');
+            Route::post('/password',         'updatePassword')->name('password.update');
+        });
+    });
 });

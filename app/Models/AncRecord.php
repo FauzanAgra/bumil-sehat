@@ -128,6 +128,15 @@ class AncRecord extends Model
         }
     }
 
+    /**
+     * Deteksi kondisi dengan menghormati keputusan bidan yang sudah ada.
+     *
+     * Kondisi yang sudah 'confirmed' atau 'rejected' oleh bidan TIDAK akan
+     * dideteksi ulang — keputusan bidan bersifat final.
+     * Hanya kondisi yang belum pernah diproses bidan yang akan dideteksi baru.
+     *
+     * Digunakan saat record di-UPDATE (data diubah oleh ibu sebelum dikunci).
+     */
     public function detectConditionsIfNoFinalDecision(): void
     {
         // Ambil kondisi yang sudah ada keputusan final (confirmed/rejected)
@@ -201,6 +210,12 @@ class AncRecord extends Model
         });
 
         static::updated(function (AncRecord $record) {
+            // Jangan proses jika yang berubah hanya is_locked
+            // (lock terjadi di ValidationController, bukan update data ANC)
+            $dirtyKeys = array_keys($record->getDirty());
+            if ($dirtyKeys === ['is_locked']) {
+                return;
+            }
             // Hanya hapus kondisi 'detected' yang belum disentuh bidan
             // Kondisi 'confirmed' dan 'rejected' tidak disentuh
             $record->detectedConditions()
@@ -208,13 +223,16 @@ class AncRecord extends Model
                 ->delete();
 
             // Deteksi ulang — tapi jangan override kondisi yang sudah pernah ada
-            // (baik confirmed maupun rejected) karena keputusan bidan bersifat final
             $record->detectConditionsIfNoFinalDecision();
         });
 
         static::updating(function (AncRecord $record) {
-            if ($record->getOriginal('is_locked')) {
-                throw new \LogicException("ANC Record #{$record->id} sudah dikunci dan tidak dapat diubah.");
+            // Izinkan update is_locked = true (proses locking itu sendiri)
+            $dirty = $record->getDirty();
+            if ($record->getOriginal('is_locked') && ! (count($dirty) === 1 && isset($dirty['is_locked']))) {
+                throw new \LogicException(
+                    "ANC Record #{$record->id} sudah dikunci dan tidak dapat diubah."
+                );
             }
         });
 

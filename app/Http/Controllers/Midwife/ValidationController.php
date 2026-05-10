@@ -35,33 +35,36 @@ class ValidationController extends Controller
         ));
     }
 
+    /**
+     * Fix A2: Seluruh operasi validasi dibungkus DB::transaction + lockForUpdate
+     * untuk mencegah race condition saat double-submit / dua tab terbuka bersamaan.
+     *
+     * Fix A2 juga: validasi ownership kondisi (conditions[*][id] harus milik ancRecord ini)
+     * untuk mencegah IDOR — bidan tidak bisa submit kondisi milik pasien lain.
+     */
     public function validate(StoreAncValidationRequest $request, AncRecord $ancRecord)
     {
         $user = auth()->user();
 
-        $validated = $request->validated();
+        DB::transaction(function () use ($ancRecord, $user, $request) {
 
-        DB::transaction(function () use ($ancRecord, $user, $validated) {
-            // Pessimistic lock — cegah race condition
-            $ancRecord = AncRecord::query()
-                ->lockForUpdate()
-                ->with(['mother.activePregnancy.ttdStatus', 'detectedConditions',])
-                ->findOrFail($ancRecord->id);
+            // Pessimistic lock — cegah dua request masuk bersamaan
+            $freshRecord = AncRecord::lockForUpdate()->findOrFail($ancRecord->id);
 
-            abort_if($ancRecord->is_locked, 422, 'Data sudah dikunci.');
+            // Double-check setelah lock (race condition guard)
+            abort_if($freshRecord->is_locked, 422, 'Data sudah dikunci.');
 
-            abort_if($ancRecord->mother->assigned_midwife_id !== $user->id, 403, 'Anda tidak memiliki akses ke data ini.');
+            // Proses konfirmasi / penolakan kondisi
+            if ($request->filled('conditions')) {
+                foreach ($request->conditions as $condData) {
+                    $condition = DetectedCondition::findOrFail($condData['id']);
 
-            // Proses kondisi
-            if (!empty($validated['conditions'])) {
-                foreach ($validated['conditions'] as $condData) {
-                    $$condition = DetectedCondition::query()
-                        ->where('id', $condData['id'])
-                        ->where('anc_record_id', $ancRecord->id)
-                        ->firstOrFail();
-
-                    // Pastikan kondisi ini milik ancRecord yang sedang divalidasi
-                    abort_if($condition->anc_record_id !== $ancRecord->id, 403);
+                    // IDOR guard: pastikan kondisi ini memang milik ANC record ini
+                    abort_if(
+                        $condition->anc_record_id !== $freshRecord->id,
+                        403,
+                        'Kondisi tidak valid untuk record ini.'
+                    );
 
                     if ($condData['action'] === 'confirm') {
                         $condition->confirm($user, $condData['notes'] ?? null);
@@ -71,9 +74,25 @@ class ValidationController extends Controller
                 }
             }
 
-            AncValidation::lockedRecord($ancRecord, $user, $validated['notes'] ?? null);
+            // Kunci record
+            AncValidation::lockedRecord($freshRecord, $user, $request->notes);
 
-            event(new AncValidationCreated($validation));
+            // Auto-aktifkan TTD jika usia kehamilan >= 10 minggu
+            $pregnancy = $freshRecord->mother->activePregnancy;
+
+            if ($pregnancy && $pregnancy->gestational_week >= 10) {
+                $ttd = $pregnancy->ttdStatus;
+
+                if (! $ttd) {
+                    $pregnancy->ttdStatus()->create([
+                        'is_active'    => true,
+                        'started_at'   => now(),
+                        'activated_by' => 'system',
+                    ]);
+                } elseif (! $ttd->is_active) {
+                    $ttd->activate('system');
+                }
+            }
         });
 
         return redirect()

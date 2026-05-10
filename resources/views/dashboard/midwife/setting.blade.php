@@ -64,7 +64,8 @@
         <section class="space-y-3">
             <div class="flex items-center justify-between px-1">
                 <h3 class="text-sm font-bold text-gray-700">Data Diri</h3>
-                <a href="..." class="text-xs text-rose-500 font-semibold hover:text-rose-700">
+                <a href="{{ route('midwife.profile.edit') }}"
+                    class="text-xs text-rose-500 font-semibold hover:text-rose-700">
                     Edit
                 </a>
             </div>
@@ -112,7 +113,7 @@
         <section class="space-y-3">
             <h3 class="text-sm font-bold text-gray-700 px-1">Keamanan Akun</h3>
             <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <a href="#" {{-- ganti dengan route ubah password ketika sudah dibuat --}}
+                <a href="{{ route('midwife.profile.password') }}"
                     class="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-400">
