@@ -17,8 +17,7 @@
                     {{ $areaLabel }}
                 </span>
             </div>
-            <a href="{{ route('midwife.profile.setting') }}"
-                class="w-11 h-11 rounded-full border-2 border-white/40 p-0.5 shrink-0">
+            <a href="{{ route('midwife.setting') }}" class="w-11 h-11 rounded-full border-2 border-white/40 p-0.5 shrink-0">
                 <img src="https://api.dicebear.com/9.x/notionists/svg?seed={{ $user->name }}" class="rounded-full"
                     alt="avatar">
             </a>

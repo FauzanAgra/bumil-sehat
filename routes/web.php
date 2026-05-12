@@ -12,10 +12,10 @@ use App\Http\Controllers\Midwife\ScheduleController as MidwifeSchedule;
 use App\Http\Controllers\Midwife\ValidationController as MidwifeValidation;
 use App\Http\Controllers\Mother\AncController;
 use App\Http\Controllers\Mother\ArticleController;
+use App\Http\Controllers\Mother\ChatController;
 use App\Http\Controllers\Mother\DashboardController as MotherDashboard;
 use App\Http\Controllers\Mother\ProfileController;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Mother\TtdController;
 use Illuminate\Support\Facades\Route;
 
 // ── Guest ─────────────────────────────────────────────────────────────────────
@@ -49,7 +49,6 @@ Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->g
 
     Route::get('/dashboard', [MotherDashboard::class, 'index'])->name('dashboard');
 
-    // ANC
     Route::prefix('anc')->name('anc.')->controller(AncController::class)->group(function () {
         Route::get('/history',         'history')->name('history');
         Route::get('/{schedule}',      'detail')->name('detail');
@@ -57,30 +56,10 @@ Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->g
         Route::post('/{schedule}/form', 'store')->name('store');
     });
 
-    // TTD
-    Route::post('/ttd/take', function () {
-        $ttd = Auth::user()->motherProfile?->activePregnancy?->ttdStatus;
-        if ($ttd?->is_active) {
-            $ttd->logs()->updateOrCreate(
-                ['date'     => today()],
-                ['is_taken' => true]
-            );
-        }
-        return back();
-    })->name('ttd.take');
+    Route::post('/ttd/take', TtdController::class)->name('ttd.take');
 
-    // Chat
-    Route::get('/chat', function () {
-        $user    = Auth::user();
-        $midwife = $user->motherProfile?->assignedMidwife;
-        $staff   = User::whereIn('role', ['midwife', 'doctor'])
-            ->where('is_verified', true)
-            ->with('medicalProfile.specialization')
-            ->get();
-        return view('dashboard.mother.chat', compact('user', 'midwife', 'staff'));
-    })->name('chat');
+    Route::get('/chat', ChatController::class)->name('chat');
 
-    // Artikel
     Route::get('/articles',              [ArticleController::class, 'index'])->name('articles');
     Route::get('/articles/{article:slug}', [ArticleController::class, 'show'])->name('articles.show');
 
@@ -101,24 +80,29 @@ Route::middleware(['auth', 'role:midwife'])->prefix('midwife')->name('midwife.')
 
     Route::get('/dashboard', [MidwifeDashboard::class, 'index'])->name('dashboard');
 
-    Route::get('/patients',              [MidwifePatient::class, 'index'])->name('patients');
-    Route::get('/patients/{motherProfile}', [MidwifePatient::class, 'show'])->name('patients.show');
+    Route::controller(MidwifePatient::class)->group(function () {
+        Route::get('/patients', 'index')->name('patients');
+        Route::get('/patients/{motherProfile}', 'show')->name('patients.show');
+    });
 
-    Route::get('/schedules',             [MidwifeSchedule::class, 'index'])->name('schedules');
-    Route::get('/schedules/create',      [MidwifeSchedule::class, 'create'])->name('schedules.create');
-    Route::post('/schedules',            [MidwifeSchedule::class, 'store'])->name('schedules.store');
-    Route::put('/schedules/{schedule}',  [MidwifePatient::class, 'updateSchedule'])->name('schedules.update');
+    Route::controller(MidwifeSchedule::class)->group(function () {
+        Route::get('/schedules', 'index')->name('schedules');
+        Route::get('/schedules/create', 'create')->name('schedules.create');
+        Route::post('/schedules', 'store')->name('schedules.store');
+        Route::put('/schedules/{schedule}', 'update')->name('schedules.update');
+    });
 
-    Route::get('/anc/{ancRecord}/validate',  [MidwifeValidation::class, 'show'])->name('anc.validate');
-    Route::post('/anc/{ancRecord}/validate', [MidwifeValidation::class, 'validate'])->name('anc.validate.store');
+    Route::controller(MidwifeValidation::class)->group(function () {
+        Route::get('/anc/{ancRecord}/validate')->name('anc.validate');
+        Route::post('/anc/{ancRecord}/validate')->name('anc.validate.store');
+    });
 
     Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])
         ->name('pregnancies.toggle-ttd');
 
-    // Profil & setting
     Route::controller(MidwifeSetting::class)->group(function () {
-        Route::get('/setting', 'show')->name('setting');
         Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/setting', 'show')->name('setting');
             Route::get('/edit',      'edit')->name('edit');
             Route::post('/edit',     'update')->name('update');
             Route::get('/password',  'changePassword')->name('password');
@@ -132,9 +116,11 @@ Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->name('doctor.')->g
 
     Route::get('/dashboard', [DoctorDashboard::class, 'index'])->name('dashboard');
 
-    Route::get('/patients',                          [DoctorPatient::class, 'index'])->name('patients');
-    Route::get('/patients/{motherProfile}',          [DoctorPatient::class, 'show'])->name('patients.show');
-    Route::post('/patients/{motherProfile}/recommend', [DoctorPatient::class, 'storeRecommendation'])->name('patients.recommend');
+    Route::controller(DoctorPatient::class)->group(function () {
+        Route::get('/patients')->name('patients');
+        Route::get('/patients/{motherProfile}')->name('patients.show');
+        Route::post('/patients/{motherProfile}/recommend')->name('patients.recommend');
+    });
 
     // Profil & setting
     Route::controller(DoctorProfile::class)->group(function () {

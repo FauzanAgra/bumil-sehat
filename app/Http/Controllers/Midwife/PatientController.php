@@ -262,35 +262,6 @@ class PatientController extends Controller
         ));
     }
 
-    public function updateSchedule(Request $request, AncSchedule $schedule)
-    {
-        $request->validate([
-            'schedule_date' => ['required', 'date'],
-            'schedule_time' => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00']
-        ]);
-
-        $schedule->load('pregnancy.mother');
-
-        abort_if(
-            optional($schedule->pregnancy?->mother)->assigned_midwife_id !== auth()->id(),
-            403
-        );
-
-        if ($schedule->ancRecord) {
-            return back()->with('error', 'Jadwal yang sudah diisi tidak dapat diubah.');
-        }
-
-        DB::transaction(function () use ($schedule, $request) {
-
-            $schedule->update([
-                'schedule_date' => $request->schedule_date,
-                'schedule_time' => $request->schedule_time,
-            ]);
-        });
-
-        return back()->with('success', 'Jadwal ANC berhasil diperbarui.');
-    }
-
     public function toggleTtd(Pregnancy $pregnancy)
     {
         abort_if(
