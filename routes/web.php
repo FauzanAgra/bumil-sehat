@@ -23,7 +23,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/', fn() => redirect()->route('login'));
 
     Route::get('/login',  [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
 
     Route::get('/register', [RegisterController::class, 'chooseRole'])->name('register');
 
@@ -93,8 +93,8 @@ Route::middleware(['auth', 'role:midwife'])->prefix('midwife')->name('midwife.')
     });
 
     Route::controller(MidwifeValidation::class)->group(function () {
-        Route::get('/anc/{ancRecord}/validate')->name('anc.validate');
-        Route::post('/anc/{ancRecord}/validate')->name('anc.validate.store');
+        Route::get('/anc/{ancRecord}/validate', 'show')->name('anc.validate');
+        Route::post('/anc/{ancRecord}/validate', 'validate')->name('anc.validate.store');
     });
 
     Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])
@@ -117,9 +117,8 @@ Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->name('doctor.')->g
     Route::get('/dashboard', [DoctorDashboard::class, 'index'])->name('dashboard');
 
     Route::controller(DoctorPatient::class)->group(function () {
-        Route::get('/patients')->name('patients');
-        Route::get('/patients/{motherProfile}')->name('patients.show');
-        Route::post('/patients/{motherProfile}/recommend')->name('patients.recommend');
+        Route::get('/patients', 'index')->name('patients');
+        Route::get('/patients/{motherProfile}', 'show')->name('patients.show');
     });
 
     // Profil & setting

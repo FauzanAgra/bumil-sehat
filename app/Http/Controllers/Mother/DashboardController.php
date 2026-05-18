@@ -36,8 +36,6 @@ class DashboardController extends Controller
             ->orderBy('schedule_date')
             ->first();
 
-        // dd($nextSchedule->toArray());
-
         // Bidan pendamping
         $midwife = $motherProfile?->assignedMidwife;
 

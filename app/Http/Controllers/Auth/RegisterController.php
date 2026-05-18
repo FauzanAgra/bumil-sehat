@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Area;
+use App\Models\MidwifeArea;
 use App\Models\MotherProfile;
 use App\Models\Subdistrict;
 use App\Models\User;
 use App\Services\NIKService;
+use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -41,7 +44,7 @@ class RegisterController extends Controller
         session([
             'reg_mother.name'     => $request->name,
             'reg_mother.phone'    => $request->phone,
-            'reg_mother.password' => $request->password,
+            'reg_mother.password' => Hash::make($request->password),
         ]);
 
         return redirect()->route('register.mother.identity');
@@ -132,44 +135,61 @@ class RegisterController extends Controller
         }
 
         $nikService = app(NIKService::class);
+        $nikHash    = $nikService->hashNIK($data['nik']);
+
+        // Re-check di step akhir sebelum commit ke DB
+        if (MotherProfile::where('nik_hash', $nikHash)->exists()) {
+            session()->forget('reg_mother');
+            return redirect()->route('register.mother')
+                ->withErrors(['nik' => 'NIK sudah terdaftar. Silakan ulangi registrasi.']);
+        }
 
         // Hitung HPL: HPHT + 280 hari (Naegele rule)
-        $hpht = \Carbon\Carbon::parse($request->hpht_date);
+        $hpht = Carbon::parse($request->hpht_date);
         $hpl  = $hpht->copy()->addDays(280);
 
         // Cari bidan pendamping
-        $midwifeArea = \App\Models\MidwifeArea::where('area_id', $data['area_id'])
+        $midwifeArea = MidwifeArea::where('area_id', $data['area_id'])
             ->where('is_active', true)
             ->first();
 
-        // Buat user
-        $user = User::create([
-            'name'        => $data['name'],
-            'phone'       => $data['phone'],
-            'password'    => Hash::make($data['password']),
-            'role'        => 'mother',
-            'is_verified' => true,
-        ]);
+        try {
+            // Buat user
+            $user = User::create([
+                'name'        => $data['name'],
+                'phone'       => $data['phone'],
+                'password'    => $data['password'],
+                'role'        => 'mother',
+                'is_verified' => true,
+            ]);
 
-        // Buat mother profile
-        $user->motherProfile()->create([
-            'nik_encrypted'      => $nikService->encrypt($data['nik']),
-            'nik_hash'           => $nikService->hashNIK($data['nik']),
-            'birth_date'         => $data['birth_date'],
-            'address'            => $data['address'],
-            'subdistrict_id'     => $data['subdistrict_id'],
-            'area_id'            => $data['area_id'],
-            'rt'                 => $data['rt'],
-            'assigned_midwife_id' => $midwifeArea?->midwife_id,
-        ]);
+            // Buat mother profile
+            $user->motherProfile()->create([
+                'nik_encrypted'      => $nikService->encrypt($data['nik']),
+                'nik_hash'           => $nikService->hashNIK($data['nik']),
+                'birth_date'         => $data['birth_date'],
+                'address'            => $data['address'],
+                'subdistrict_id'     => $data['subdistrict_id'],
+                'area_id'            => $data['area_id'],
+                'rt'                 => $data['rt'],
+                'assigned_midwife_id' => $midwifeArea?->midwife_id,
+            ]);
 
-        // Buat pregnancy
-        $motherProfile = $user->motherProfile;
-        $motherProfile->pregnancies()->create([
-            'hpht_date' => $hpht,
-            'hpl_date'  => $hpl,
-            'status'    => 'active',
-        ]);
+            // Buat pregnancy
+            $motherProfile = $user->motherProfile;
+            $motherProfile->pregnancies()->create([
+                'hpht_date' => $hpht,
+                'hpl_date'  => $hpl,
+                'status'    => 'active',
+            ]);
+        } catch (QueryException $e) {
+            if ($e->errorInfo[1] === 1062) { // MySQL duplicate entry
+                session()->forget('reg_mother');
+                return redirect()->route('register.mother')
+                    ->withErrors(['nik' => 'NIK sudah terdaftar. Silakan ulangi registrasi.']);
+            }
+            throw $e;
+        }
 
         // Bersihkan session registrasi
         session()->forget('reg_mother');

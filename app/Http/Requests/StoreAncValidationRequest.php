@@ -12,7 +12,8 @@ class StoreAncValidationRequest extends FormRequest
     public function authorize(): bool
     {
         $ancRecord = $this->route('ancRecord');
-        return $ancRecord->mother->assigned_midwife_id === $this->user()->id;
+        return $ancRecord->mother->assigned_midwife_id === $this->user()->id
+            && ! $ancRecord->is_locked;
     }
 
     /**

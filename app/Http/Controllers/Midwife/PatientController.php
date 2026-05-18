@@ -3,104 +3,121 @@
 namespace App\Http\Controllers\Midwife;
 
 use App\Http\Controllers\Controller;
-use App\Models\AncRecord;
-use App\Models\AncSchedule;
-use App\Models\DetectedCondition;
 use App\Models\MotherProfile;
 use App\Models\Pregnancy;
 use App\Models\TtdStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PatientController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
-        $query = MotherProfile::where('assigned_midwife_id', $user->id)
-            ->with(['user', 'activePregnancy', 'subdistrict', 'area']);
+        $query = MotherProfile::query()
+            ->where('assigned_midwife_id', $user->id)
+            ->with([
+                'user',
+                'activePregnancy',
+                'subdistrict',
+                'area',
+                'ancRecords.detectedConditions',
+                'ancRecords.validation',
+            ]);
 
         // Search
         if ($request->filled('q')) {
-            $query->whereHas(
-                'user',
-                fn($q) =>
-                $q->where('name', 'like', '%' . $request->q . '%')
-            );
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->q . '%');
+            });
         }
 
         // Filter status
         $filter = $request->get('filter', 'semua');
+
         if ($filter === 'risiko') {
-            $query->whereHas(
-                'ancRecords',
-                fn($q) =>
-                $q->whereHas(
-                    'detectedConditions',
-                    fn($q2) =>
-                    $q2->where('status', 'detected')
-                )
-            );
+            $query->whereHas('ancRecords', function ($q) {
+                $q->whereHas('detectedConditions', function ($q2) {
+                    $q2->where('status', 'detected');
+                });
+            });
         } elseif ($filter === 'validasi') {
-            $query->whereHas(
-                'ancRecords',
-                fn($q) =>
-                $q->unlocked()->doesntHave('validation')
-            );
+            $query->whereHas('ancRecords', function ($q) {
+                $q->unlocked()->doesntHave('validation');
+            });
         } elseif ($filter === 'normal') {
-            $query->whereDoesntHave(
-                'ancRecords',
-                fn($q) =>
-                $q->whereHas(
-                    'detectedConditions',
-                    fn($q2) =>
-                    $q2->where('status', 'detected')
-                )
-            )->whereDoesntHave(
-                'ancRecords',
-                fn($q) =>
-                $q->unlocked()->doesntHave('validation')
-            );
+            $query->whereDoesntHave('ancRecords', function ($q) {
+                $q->whereHas('detectedConditions', function ($q2) {
+                    $q2->where('status', 'detected');
+                });
+            })->whereDoesntHave('ancRecords', function ($q) {
+                $q->unlocked()->doesntHave('validation');
+            });
         }
 
-        $query->with([
-            'user',
-            'activePregnancy',
-            'subdistrict',
-            'area',
-            'ancRecords.detectedConditions',
-            'ancRecords.validation',
-        ]);
+        // Statistik tetap dihitung dari seluruh pasien bidan
+        $allMothers = (clone $query)->get()->map(function ($m) {
 
-        $mothers = $query->get()->map(function ($m) {
             $hasRisk = $m->ancRecords->contains(
-                fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
-            );
-            $hasPending = $m->ancRecords->contains(
-                fn($r) => !$r->is_locked && !$r->validation
+                fn($r) =>
+                $r->detectedConditions
+                    ->where('status', 'detected')
+                    ->isNotEmpty()
             );
 
-            $m->status_flag = $hasRisk ? 'risiko' : ($hasPending ? 'validasi' : 'normal');
-            $m->conditions  = $hasRisk
-                ? $m->ancRecords
-                ->flatMap(fn($r) => $r->detectedConditions->where('status', 'detected'))
-                ->pluck('condition_type')
-                ->unique()
-                ->values()
-                ->toArray()
-                : [];
+            $hasPending = $m->ancRecords->contains(
+                fn($r) => ! $r->is_locked && ! $r->validation
+            );
+
+            $m->status_flag = $hasRisk
+                ? 'risiko'
+                : ($hasPending ? 'validasi' : 'normal');
+
             return $m;
         });
 
-        // Hitung stat
         $stats = [
-            'total'   => $mothers->count(),
-            'normal'  => $mothers->where('status_flag', 'normal')->count(),
-            'validasi' => $mothers->where('status_flag', 'validasi')->count(),
-            'risiko'  => $mothers->where('status_flag', 'risiko')->count(),
+            'total'    => $allMothers->count(),
+            'normal'   => $allMothers->where('status_flag', 'normal')->count(),
+            'validasi' => $allMothers->where('status_flag', 'validasi')->count(),
+            'risiko'   => $allMothers->where('status_flag', 'risiko')->count(),
         ];
+
+        // Pagination
+        $mothers = $query->paginate(20)
+            ->through(function ($m) {
+                $hasRisk = $m->ancRecords->contains(
+                    fn($r) =>
+                    $r->detectedConditions
+                        ->where('status', 'detected')
+                        ->isNotEmpty()
+                );
+
+                $hasPending = $m->ancRecords->contains(
+                    fn($r) => ! $r->is_locked && ! $r->validation
+                );
+
+                $m->status_flag = $hasRisk
+                    ? 'risiko'
+                    : ($hasPending ? 'validasi' : 'normal');
+
+                $m->conditions = $hasRisk
+                    ? $m->ancRecords
+                    ->flatMap(
+                        fn($r) =>
+                        $r->detectedConditions
+                            ->where('status', 'detected')
+                    )
+                    ->pluck('condition_type')
+                    ->unique()
+                    ->values()
+                    ->toArray()
+                    : [];
+
+                return $m;
+            });
 
         return view('dashboard.midwife.patients', compact(
             'user',

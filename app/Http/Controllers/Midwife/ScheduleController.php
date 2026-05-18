@@ -161,13 +161,10 @@ class ScheduleController extends Controller
             return back()->with('error', 'Jadwal yang sudah diisi tidak dapat diubah.');
         }
 
-        DB::transaction(function () use ($schedule, $request) {
-
-            $schedule->update([
-                'schedule_date' => $request->schedule_date,
-                'schedule_time' => $request->schedule_time,
-            ]);
-        });
+        $schedule->update([
+            'schedule_date' => $request->schedule_date,
+            'schedule_time' => $request->schedule_time,
+        ]);
 
         return back()->with('success', 'Jadwal ANC berhasil diperbarui.');
     }

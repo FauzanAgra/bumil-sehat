@@ -177,11 +177,6 @@ class AncRecord extends Model
     }
 
     // Helper
-    public function isLocked(): bool
-    {
-        return $this->is_locked;
-    }
-
     public function isValidated(): bool
     {
         return $this->validation()->exists();

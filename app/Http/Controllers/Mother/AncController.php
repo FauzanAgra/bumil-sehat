@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AncRecord;
 use App\Models\AncSchedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AncController extends Controller
 {
     //Riwayat semua jadwal ANC
     public function history()
     {
-        $user          = auth()->user();
+        $user          = Auth::user();
         $motherProfile = $user->motherProfile;
         $pregnancy     = $motherProfile?->activePregnancy;
 
@@ -41,7 +42,7 @@ class AncController extends Controller
     // ── Detail satu ANC 
     public function detail(AncSchedule $schedule)
     {
-        $user          = auth()->user();
+        $user          = Auth::user();
         $motherProfile = $user->motherProfile;
 
         // Pastikan jadwal ini milik ibu yang login
@@ -62,11 +63,11 @@ class AncController extends Controller
     //  Form input ANC 
     public function form(AncSchedule $schedule)
     {
-        $user          = auth()->user();
+        $user          = Auth::user();
         $motherProfile = $user->motherProfile;
 
         abort_if(
-            $schedule->pregnancy->mother_id !== $motherProfile->id,
+            $schedule->pregnancy?->mother_id !== $motherProfile->id,
             403
         );
 
@@ -91,11 +92,11 @@ class AncController extends Controller
     //  Simpan data ANC 
     public function store(Request $request, AncSchedule $schedule)
     {
-        $user          = auth()->user();
+        $user          = Auth::user();
         $motherProfile = $user->motherProfile;
 
         abort_if(
-            $schedule->pregnancy->mother_id !== $motherProfile->id,
+            $schedule->pregnancy?->mother_id !== $motherProfile->id,
             403
         );
 

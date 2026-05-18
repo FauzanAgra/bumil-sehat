@@ -51,7 +51,7 @@ class EnsureRole
             'mother'  => route('mother.dashboard'),
             'midwife' => route('midwife.dashboard'),
             'doctor'  => route('doctor.dashboard'),
-            'admin'   => route('admin.dashboard'),
+            'admin'   => '/admin', // atau url('/admin')
             default   => route('login'),
         };
     }
