@@ -254,11 +254,34 @@
                                 <span>{{ Carbon\Carbon::parse($nextSchedule->scheduled_time)->format('H:i') }} WIB</span>
                             </p>
                         @endif
+                        <p class="text-xs flex items-center gap-1 opacity-90" id="scheduleTimeLabel">
+                            <i class="fa-regular fa-clock text-[11px]"></i>
+                            <span>
+                                @if (\Carbon\Carbon::parse($nextSchedule->schedule_date)->isToday())
+                                    Hari ini
+                                @elseif (\Carbon\Carbon::parse($nextSchedule->schedule_date)->isTomorrow())
+                                    Besok
+                                @else
+                                    {{ \Carbon\Carbon::parse($nextSchedule->schedule_date)->translatedFormat('l, d F Y') }}
+                                @endif
+                                @if ($nextSchedule->schedule_time)
+                                    · {{ \Carbon\Carbon::parse($nextSchedule->schedule_time)->format('H:i') }} WIB
+                                @endif
+                            </span>
+                        </p>
                     </div>
-                    <a href="{{ route('mother.anc.form', $nextSchedule->id) }}"
-                        class="w-9 h-9 bg-white/25 rounded-full flex items-center justify-center">
-                        <i class="fa-solid fa-chevron-right text-sm"></i>
-                    </a>
+                    @if (\Carbon\Carbon::parse($nextSchedule->schedule_date)->isToday())
+                        <a href="{{ route('mother.anc.form', $nextSchedule->id) }}"
+                            class="w-9 h-9 bg-white/25 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-right text-sm"></i>
+                        </a>
+                    @else
+                        <div
+                            class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center shrink-0 opacity-40 cursor-not-allowed">
+                            <i class="fa-solid fa-chevron-right text-sm"></i>
+                        </div>
+                    @endif
+
                 </div>
             @else
                 <div class="bg-white rounded-4xl p-6 shadow-sm border border-gray-100 text-center space-y-4">

@@ -13,7 +13,7 @@
             <div>
                 <p class="text-blue-100 text-[11px] font-medium">Selamat Bertugas,</p>
                 <h2 class="text-xl font-bold text-white mt-0.5">
-                    {{ trim(($user->medicalProfile?->degree_prefix ? $user->medicalProfile->degree_prefix . ' ' : '') . $user->name) }}
+                    {{ $user->medicalProfile->full_name }}
                     👨‍⚕️
                 </h2>
                 <span class="inline-block mt-1.5 text-[10px] bg-white/30 text-white px-3 py-1 rounded-full font-semibold">

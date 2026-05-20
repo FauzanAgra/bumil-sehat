@@ -122,9 +122,9 @@ Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->name('doctor.')->g
     });
 
     // Profil & setting
-    Route::controller(DoctorProfile::class)->group(function () {
+    Route::controller(DoctorProfile::class)->name('profile.')->group(function () {
         Route::get('/setting', 'show')->name('setting');
-        Route::prefix('profile')->name('profile.')->group(function () {
+        Route::prefix('profile')->group(function () {
             Route::get('/edit',      'edit')->name('edit');
             Route::post('/edit',     'update')->name('update');
             Route::get('/password',  'changePassword')->name('password');

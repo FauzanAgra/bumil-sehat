@@ -28,7 +28,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest">Bidan</p>
-                    <h2 class="text-lg font-bold leading-tight">{{ $user->name }}</h2>
+                    <h2 class="text-lg font-bold leading-tight">{{ $user->medicalProfile->full_name }}</h2>
                     @if ($user->medicalProfile?->specialization)
                         <span class="inline-block mt-1 text-[10px] bg-white/30 px-3 py-1 rounded-full">
                             {{ $user->medicalProfile->specialization->name }}
@@ -43,19 +43,32 @@
             <section class="space-y-3">
                 <h3 class="text-sm font-bold text-gray-700 px-1">Wilayah Tugas</h3>
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                    @foreach ($user->midwifeAreas()->where('is_active', true)->with('area.subdistrict')->get() as $ma)
-                        <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 last:border-0">
-                            <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
+
+                    @php
+                        $groupedAreas = $user
+                            ->midwifeAreas()
+                            ->where('is_active', true)
+                            ->with('area.subdistrict')
+                            ->get()
+                            ->groupBy(fn($ma) => $ma->area->subdistrict->name)
+                            ->sortKeys();
+                    @endphp
+
+                    @foreach ($groupedAreas as $subdistrictName => $areas)
+                        <div class="flex items-start gap-3 px-5 py-4 border-b border-gray-100 last:border-0">
+                            <div
+                                class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 shrink-0 mt-0.5">
                                 <i class="fa-solid fa-map-pin text-xs"></i>
                             </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    Kel. {{ $ma->area->subdistrict->name }}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800">Kelurahan {{ $subdistrictName }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">
+                                    RW {{ $areas->map(fn($ma) => $ma->area->rw_number)->sort()->join(', ') }}
                                 </p>
-                                <p class="text-xs text-gray-400">RW {{ $ma->area->rw_number }}</p>
                             </div>
                         </div>
                     @endforeach
+
                 </div>
             </section>
         @endif

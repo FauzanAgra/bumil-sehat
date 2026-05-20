@@ -49,7 +49,7 @@ class MotherProfileInfolist
 
                         TextEntry::make('area.rw_number')
                             ->label('RW')
-                            ->formatStateUsing(fn($state) => 'RW ' . $state),
+                            ->formatStateUsing(fn($state) => $state),
 
                         TextEntry::make('assignedMidwife.name')
                             ->label('Bidan Pendamping')

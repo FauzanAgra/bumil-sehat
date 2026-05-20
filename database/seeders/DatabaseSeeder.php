@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -26,6 +25,12 @@ class DatabaseSeeder extends Seeder
             'is_verified' => true,
         ]);
 
-        $this->call(SpecializationSeeder::class);
+        // ── Master data ───────────────────────────────────────────────
+        $this->call([
+            SpecializationSeeder::class,  // harus sebelum MedicalStaffSeeder
+            SubdistrictSeeder::class,     // harus sebelum MedicalStaffSeeder & MotherSeeder
+            MedicalStaffSeeder::class,    // bidan & dokter + assign wilayah
+            MotherSeeder::class,          // ibu hamil demo
+        ]);
     }
 }

@@ -1,59 +1,288 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+<img src="https://api.dicebear.com/9.x/notionists/svg?seed=BumilSehat&backgroundColor=fda4af" width="120" height="120" alt="BumilSehat Logo" />
 
-## About Laravel
+# BumilSehat
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Aplikasi Pemantauan Kehamilan Berbasis Puskesmas**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+[![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Filament](https://img.shields.io/badge/Filament-v3-FDAE4B?style=flat-square)](https://filamentphp.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+[Fitur](#-fitur-utama) · [Instalasi](#-instalasi) · [Dokumentasi](#-dokumentasi) · [Role](#-role-pengguna) · [Screenshot](#-screenshot)
 
-## Learning Laravel
+</div>
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 📋 Tentang BumilSehat
 
-## Laravel Sponsors
+BumilSehat adalah aplikasi web pemantauan kehamilan yang dirancang khusus untuk **Puskesmas** di Indonesia. Aplikasi ini mendigitalisasi pencatatan Antenatal Care (ANC) yang sebelumnya dilakukan secara manual melalui buku KIA.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Prinsip Utama
 
-### Premium Partners
+- 🤱 **Ibu Hamil** menginput data ANC secara mandiri saat kunjungan
+- 👩‍⚕️ **Bidan** menentukan jadwal, memvalidasi, dan mengunci data
+- 🩺 **Dokter** melakukan supervisi dan memberikan rekomendasi
+- 🤖 **Sistem** mendeteksi kondisi risiko secara otomatis (bukan diagnosis)
+- 🔐 **NIK** disimpan terenkripsi penuh (AES + HMAC-SHA256)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## ✨ Fitur Utama
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Fitur | Keterangan |
+|-------|-----------|
+| 📅 Penjadwalan ANC | Bidan membuat jadwal ANC ke-1 s/d ke-6 |
+| 📝 Input Data ANC | Form lengkap: antropometri, vital sign, lab, USG |
+| ⚠️ Deteksi Kondisi Risiko | Auto-detect KEK, Preeklampsia, Anemia |
+| ✅ Validasi & Penguncian | Bidan validasi + kunci data (irreversible) |
+| 💊 Pemantauan TTD | Tracking konsumsi Tablet Tambah Darah harian |
+| 📰 Artikel Edukasi | CMS artikel kehamilan dengan filter usia kandungan |
+| 🔒 Keamanan NIK | Enkripsi AES + hash HMAC-SHA256, tidak pernah plaintext |
+| 🏥 Admin Panel | Filament-based: kelola user, wilayah, artikel, spesialisasi |
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 👥 Role Pengguna
 
-## Security Vulnerabilities
+```
+┌─────────────┬──────────────────────────────────────────────────┐
+│ Role        │ Akses                                            │
+├─────────────┼──────────────────────────────────────────────────┤
+│ Ibu Hamil   │ Input ANC, lihat jadwal, TTD, baca artikel       │
+│ Bidan       │ Jadwal ANC, validasi, kunci data, pantau TTD     │
+│ Dokter      │ Review data, supervisi, rekomendasi              │
+│ Admin       │ Verifikasi akun, mapping wilayah, CMS artikel    │
+└─────────────┴──────────────────────────────────────────────────┘
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🛠 Tech Stack
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- **Backend**: Laravel 11, PHP 8.2+, Eloquent ORM
+- **Frontend**: Blade, Tailwind CSS v4, Font Awesome 6
+- **Admin Panel**: Filament v3
+- **Database**: MySQL / MariaDB
+- **Auth**: Laravel session-based (custom, login via nomor HP)
+- **Storage**: Laravel Storage (public disk)
+- **Security**: AES encryption + HMAC-SHA256 untuk NIK
+
+---
+
+## 🚀 Instalasi
+
+### Prasyarat
+
+- PHP >= 8.2
+- Composer
+- Node.js >= 18 & npm
+- MySQL / MariaDB
+
+### Langkah Instalasi
+
+```bash
+# 1. Clone repository
+git clone https://github.com/fauzanagra/bumilsehat.git
+cd bumilsehat
+
+# 2. Install PHP dependencies
+composer install
+
+# 3. Install JS dependencies
+npm install
+
+# 4. Konfigurasi environment
+cp .env.example .env
+php artisan key:generate
+
+# 5. Konfigurasi database di .env
+DB_DATABASE=bumilsehat
+DB_USERNAME=root
+DB_PASSWORD=
+
+# 6. Generate NIK hash salt (WAJIB — jangan skip)
+php artisan tinker --execute="echo bin2hex(random_bytes(32));"
+# Salin output ke NIK_HASH_SALT= di .env
+
+# 7. Jalankan migrasi & seeder
+php artisan migrate --seed
+
+# 8. Build assets
+npm run build
+
+# 9. Link storage
+php artisan storage:link
+
+# 10. Jalankan server
+php artisan serve
+```
+
+Akses aplikasi di `http://localhost:8000`  
+Akses admin panel di `http://localhost:8000/admin`
+
+---
+
+## ⚙️ Konfigurasi Environment
+
+Variabel penting di `.env`:
+
+```env
+APP_NAME=BumilSehat
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_DATABASE=bumilsehat
+
+# KRITIS — Generate sekali, JANGAN pernah diubah setelah data production masuk
+NIK_HASH_SALT=your-generated-salt-here
+
+# Storage
+FILESYSTEM_DISK=public
+
+# Queue (gunakan 'database' atau 'redis' di production)
+QUEUE_CONNECTION=sync
+```
+
+> ⚠️ **Penting**: `NIK_HASH_SALT` **tidak boleh diubah** setelah data production ada. Perubahan akan membuat seluruh hash NIK existing tidak valid.
+
+---
+
+## 🌱 Seeder & Akun Demo
+
+Setelah `php artisan migrate --seed`, akun berikut tersedia:
+
+| Role | Nomor HP | Password |
+|------|----------|----------|
+| Admin | `08100000000` | `password` |
+| Bidan | `08100000001` | `password` |
+| Dokter | `08100000002` | `password` |
+| Ibu Hamil | `08100000003` | `password` |
+
+> Akun demo hanya untuk environment **development/staging**. Hapus atau ganti password sebelum deploy ke production.
+
+---
+
+## 📁 Struktur Folder Utama
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Auth/          # Login, Register (multi-step)
+│   │   ├── Mother/        # Dashboard, ANC, TTD, Artikel, Profil
+│   │   ├── Midwife/       # Dashboard, Pasien, Jadwal, Validasi
+│   │   └── Doctor/        # Dashboard, Pasien, Profil
+│   └── Middleware/
+│       └── EnsureRole.php # Role-based access control
+├── Models/                # Eloquent models
+├── Services/
+│   └── NIKService.php     # Enkripsi, hash, masking NIK
+├── Events/                # Domain events
+├── Listeners/             # Event listeners
+└── Filament/Resources/    # Admin panel resources
+
+resources/views/
+├── auth/                  # Halaman login & registrasi
+└── dashboard/
+    ├── mother/            # Views ibu hamil
+    ├── midwife/           # Views bidan
+    └── doctor/            # Views dokter
+
+routes/
+└── web.php                # Semua route, dikelompokkan per role
+```
+
+---
+
+## 🔒 Keamanan NIK
+
+BumilSehat menerapkan pendekatan **dual-storage** untuk NIK sesuai prinsip UU PDP:
+
+| Kolom | Metode | Tujuan |
+|-------|--------|--------|
+| `nik_encrypted` | AES (Laravel Crypt) | Ditampilkan ke user berwenang |
+| `nik_hash` | HMAC-SHA256 | Uniqueness check & pencarian |
+
+NIK **tidak pernah** disimpan dalam bentuk plaintext di database.
+
+---
+
+## 📖 Dokumentasi
+
+Dokumentasi lengkap tersedia di folder `doc/`:
+
+| File | Isi |
+|------|-----|
+| [`doc/01__PRD.md`](doc/01.%20PRD.md) | Product Requirement Document lengkap |
+| [`doc/02__ERD.md`](doc/02.%20ERD.md) | Entity Relationship Document + schema detail |
+| [`CLAUDE.md`](doc/00.%20CLAUDE.md) | Panduan project untuk Claude Code |
+
+---
+
+## 🗺 Route Overview
+
+```
+/                           → redirect ke /login
+/login                      → halaman login (nomor HP + password)
+/register                   → pilih role registrasi
+/register/mother            → registrasi ibu hamil (3 step)
+/register/medical           → registrasi tenaga medis
+
+/mother/*                   → dashboard ibu hamil
+/midwife/*                  → dashboard bidan
+/doctor/*                   → dashboard dokter
+/admin                      → panel admin (Filament)
+```
+
+---
+
+## 🚢 Deployment
+
+### Production Checklist
+
+```bash
+# 1. Set environment
+APP_ENV=production
+APP_DEBUG=false
+
+# 2. Optimize
+php artisan optimize
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 3. Build assets
+npm run build
+
+# 4. Pastikan queue worker berjalan (untuk event listener TTD)
+php artisan queue:work --daemon
+```
+
+### Hal yang WAJIB dicek sebelum go-live
+
+- [ ] `APP_KEY` sudah di-generate dan aman
+- [ ] `NIK_HASH_SALT` sudah di-set dan dicatat di tempat aman
+- [ ] `APP_DEBUG=false`
+- [ ] Akun demo sudah dihapus atau password diganti
+- [ ] `storage:link` sudah dijalankan
+- [ ] Queue worker berjalan (untuk `AutoActivateTtdOnValidation`)
+- [ ] HTTPS aktif (wajib — data kesehatan sensitif)
+
+---
+
+## 📝 Lisensi
+
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
+
+---
+
+<div align="center">
+
+Dibuat dengan ❤️ untuk mendukung kesehatan ibu hamil Indonesia
+
+</div>

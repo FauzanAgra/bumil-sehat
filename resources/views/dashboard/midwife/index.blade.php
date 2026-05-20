@@ -12,12 +12,13 @@
         <div class="relative z-10 flex justify-between items-start mb-6">
             <div>
                 <p class="text-rose-100 text-[11px] font-medium">{{ $greeting }},</p>
-                <h2 class="text-xl font-bold text-white mt-0.5">Bidan {{ Str::before($user->name, ' ') }} 👩‍⚕️</h2>
+                <h2 class="text-xl font-bold text-white mt-0.5">{{ $user->medicalProfile->full_name }} 👩‍⚕️</h2>
                 <span class="inline-block mt-1.5 text-[10px] bg-white/30 text-white px-3 py-1 rounded-full font-semibold">
-                    {{ $areaLabel }}
+                    {{ $user->medicalProfile?->specialization?->name }}
                 </span>
             </div>
-            <a href="{{ route('midwife.setting') }}" class="w-11 h-11 rounded-full border-2 border-white/40 p-0.5 shrink-0">
+            <a href="{{ route('midwife.profile.setting') }}"
+                class="w-11 h-11 rounded-full border-2 border-white/40 p-0.5 shrink-0">
                 <img src="https://api.dicebear.com/9.x/notionists/svg?seed={{ $user->name }}" class="rounded-full"
                     alt="avatar">
             </a>
