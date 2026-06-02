@@ -90,6 +90,8 @@ Route::middleware(['auth', 'role:midwife'])->prefix('midwife')->name('midwife.')
         Route::get('/schedules/create', 'create')->name('schedules.create');
         Route::post('/schedules', 'store')->name('schedules.store');
         Route::put('/schedules/{schedule}', 'update')->name('schedules.update');
+        Route::patch('/schedules/{schedule}/missed', 'markMissed')->name('schedules.missed');
+        Route::post('/schedules/missed-direct/{motherProfile}', 'markMissedDirect')->name('schedules.missed.direct');
     });
 
     Route::controller(MidwifeValidation::class)->group(function () {

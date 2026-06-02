@@ -20,7 +20,8 @@ class ScheduleController extends Controller
                 'mother',
                 fn($q2) => $q2->where('assigned_midwife_id', $user->id)
             );
-        })->with(['pregnancy.mother.user', 'ancRecord.detectedConditions']);
+        })->where('status', '!=', 'missed')
+            ->with(['pregnancy.mother.user', 'ancRecord.detectedConditions']);
 
         $query = match ($filter) {
             'today'    => $query->where('schedule_date', today()),
@@ -50,10 +51,6 @@ class ScheduleController extends Controller
         ));
     }
 
-    /**
-     * Fix B4: Eager load detectedConditions supaya has_risk bisa dihitung
-     * di collection tanpa N+1 query.
-     */
     public function create(Request $request)
     {
         $user = auth()->user();
@@ -62,15 +59,35 @@ class ScheduleController extends Controller
             ->with([
                 'user',
                 'activePregnancy.ancSchedules',
-                'ancRecords.detectedConditions', // ← untuk has_risk
+                'ancRecords.detectedConditions',
             ])
             ->get()
             ->filter(fn($m) => $m->activePregnancy)
             ->map(function ($m) {
-                // Tandai apakah ibu punya kondisi risiko aktif
                 $m->has_risk = $m->ancRecords->contains(
                     fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
                 );
+
+                $schedules = $m->activePregnancy->ancSchedules;
+
+                // ANC yang locked (selesai) — tidak bisa dipilih lagi
+                $m->completed_anc = $schedules
+                    ->filter(fn($s) => $s->ancRecord?->is_locked)
+                    ->pluck('anc_number')
+                    ->toArray();
+
+                // ANC yang terjadwal (belum selesai, bukan missed) — tidak bisa duplikat
+                $m->scheduled_anc = $schedules
+                    ->filter(fn($s) => $s->status === 'scheduled')
+                    ->pluck('anc_number')
+                    ->toArray();
+
+                // ANC yang missed — tampil merah, tidak bisa dipilih
+                $m->missed_anc = $schedules
+                    ->filter(fn($s) => $s->status === 'missed')
+                    ->pluck('anc_number')
+                    ->toArray();
+
                 return $m;
             })
             ->values();
@@ -87,10 +104,6 @@ class ScheduleController extends Controller
         ));
     }
 
-    /**
-     * Fix A5: Authorization check sekaligus saat query (bukan setelah findOrFail),
-     * lebih efisien dan semantically correct.
-     */
     public function store(Request $request)
     {
         $user = auth()->user();
@@ -141,6 +154,70 @@ class ScheduleController extends Controller
         return redirect()
             ->route('midwife.schedules')
             ->with('success', 'Jadwal ANC ke-' . $request->anc_number . ' berhasil dibuat.');
+    }
+
+    public function markMissedDirect(Request $request, MotherProfile $motherProfile)
+    {
+        $user = auth()->user();
+
+        abort_if(
+            $motherProfile->assigned_midwife_id !== $user->id,
+            403
+        );
+
+        $request->validate([
+            'anc_number' => ['required', 'integer', 'min:1', 'max:6'],
+        ]);
+
+        $pregnancy = $motherProfile->activePregnancy;
+
+        abort_if(! $pregnancy, 404, 'Tidak ada kehamilan aktif.');
+
+        $exists = $pregnancy->ancSchedules()
+            ->where('anc_number', $request->anc_number)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ANC ke-' . $request->anc_number . ' sudah ada.',
+            ], 422);
+        }
+
+        $pregnancy->ancSchedules()->create([
+            'anc_number'    => $request->anc_number,
+            'schedule_date' => now()->toDateString(),
+            'status'        => 'missed',
+            'created_by'    => $user->id,
+        ]);
+
+        return back()->with('success', 'ANC ke-' . $request->anc_number . ' ditandai sebagai terlewat.');
+    }
+
+    public function markMissed(AncSchedule $schedule)
+    {
+        $schedule->load('pregnancy.mother');
+
+        abort_if(
+            optional($schedule->pregnancy?->mother)->assigned_midwife_id !== auth()->id(),
+            403
+        );
+
+        abort_if(
+            $schedule->ancRecord()->exists(),
+            422,
+            'Jadwal yang sudah diisi tidak dapat ditandai missed.'
+        );
+
+        abort_if(
+            $schedule->status === 'missed',
+            422,
+            'Jadwal ini sudah ditandai missed.'
+        );
+
+        $schedule->update(['status' => 'missed']);
+
+        return back()->with('success', 'ANC ke-' . $schedule->anc_number . ' ditandai sebagai terlewat.');
     }
 
     public function update(Request $request, AncSchedule $schedule)

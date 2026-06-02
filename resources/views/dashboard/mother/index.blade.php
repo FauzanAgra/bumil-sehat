@@ -112,12 +112,16 @@
                             for ($i = -2; $i <= 2; $i++) {
                                 $days->push(now()->addDays($i));
                             }
+
+                            $ttdLogsByDate = collect($ttdLogs)->keyBy(
+                                fn($l) => \Carbon\Carbon::parse(is_object($l) ? $l->date : $l['date'])->toDateString(),
+                            );
                         @endphp
 
                         @foreach ($days as $day)
                             @php
                                 $dateStr = $day->toDateString();
-                                $log = $ttdLogs[$dateStr] ?? null;
+                                $log = $ttdLogsByDate[$dateStr] ?? null;
                                 $isToday = $day->isToday();
                                 $isFuture = $day->isFuture();
                                 $isTaken = $log?->is_taken;

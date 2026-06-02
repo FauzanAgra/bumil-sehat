@@ -52,8 +52,6 @@
                 <div id="patientList" class="space-y-2.5 max-h-64 overflow-y-auto">
                     @foreach ($mothers as $m)
                         @php
-                            $completedAnc = $m->activePregnancy?->completed_anc_count ?? 0;
-                            $scheduledAnc = $m->activePregnancy?->ancSchedules->pluck('anc_number')->toArray() ?? [];
                             $isSelected = old('mother_profile_id', $selectedMother?->id) == $m->id;
                             $hasRisk = $m->has_risk ?? false;
                         @endphp
@@ -63,8 +61,9 @@
                                 {{ $m->id }},
                                 '{{ addslashes($m->user->name) }}',
                                 {{ $m->activePregnancy?->gestational_week ?? 0 }},
-                                {{ $completedAnc }},
-                                {{ json_encode($scheduledAnc) }},
+                                {{ json_encode($m->completed_anc ?? []) }},
+                                {{ json_encode($m->scheduled_anc ?? []) }},
+                                {{ json_encode($m->missed_anc ?? []) }},
                                 {{ $hasRisk ? 'true' : 'false' }},
                                 this
                             )"
@@ -87,7 +86,7 @@
                                 </div>
                                 <p class="text-xs text-gray-400">
                                     {{ $m->activePregnancy?->gestational_week ?? '—' }} minggu
-                                    · ANC ke-{{ $completedAnc }} selesai
+                                    · ANC ke-{{ count($m->completed_anc ?? []) }} selesai
                                 </p>
                             </div>
                         </button>
@@ -142,6 +141,18 @@
                 </div>
 
                 <input type="hidden" name="anc_number" id="selectedAncNumber" value="{{ old('anc_number') }}">
+
+                {{-- Panel slot terlewat — tampil jika ada slot kosong sebelum ANC yang dipilih --}}
+                <div id="missedSlotsPanel" class="hidden space-y-2">
+                    <p class="text-xs font-semibold text-gray-500 px-1">Slot sebelumnya masih kosong:</p>
+                    <div id="missedSlotsList" class="space-y-2"></div>
+                    <p class="text-[10px] text-gray-400 px-1 leading-relaxed">
+                        Tandai sebagai terlewat jika ANC ini sudah dilakukan sebelum registrasi digital.
+                    </p>
+                </div>
+
+                {{-- CSRF token untuk AJAX --}}
+                <meta name="csrf-token" content="{{ csrf_token() }}" id="csrfToken">
 
                 {{-- B4: USG note banner — tampil saat ANC ke-1 atau ke-5 dipilih --}}
                 <div id="usgNoteBanner"
@@ -261,7 +272,7 @@
         // ──────────────────────────────────────────────────────────────
         // Pilih pasien
         // ──────────────────────────────────────────────────────────────
-        function selectPatient(id, name, week, completedAnc, scheduledAnc, hasRisk, btn) {
+        function selectPatient(id, name, week, completedAnc, scheduledAnc, missedAnc, hasRisk, btn) {
             document.getElementById('selectedMotherId').value = id;
             document.getElementById('selectedName').textContent = name;
             document.getElementById('selectedWeek').textContent = week + ' minggu kehamilan';
@@ -288,7 +299,16 @@
             document.getElementById('step3').style = '';
 
             // Update state tombol ANC grid
-            updateAncButtons(completedAnc, scheduledAnc);
+            updateAncButtons(completedAnc, scheduledAnc, missedAnc);
+
+            // Simpan state untuk panel missed slots
+            currentScheduledAnc = scheduledAnc;
+            currentMissedAnc = missedAnc;
+            currentMotherId = id;
+
+            // Reset panel missed slots saat ganti pasien
+            document.getElementById('missedSlotsPanel').classList.add('hidden');
+            document.getElementById('selectedAncNumber').value = '';
         }
 
         function resetPatient() {
@@ -318,21 +338,28 @@
 
         // ──────────────────────────────────────────────────────────────
         // Update state tombol ANC grid
-        // completed = ANC yang sudah selesai (is_locked)
-        // scheduled = ANC yang sudah terjadwal (tapi belum tentu selesai)
+        // completed = ANC yang sudah locked (selesai)
+        // scheduled = ANC yang terjadwal tapi belum selesai
+        // missed    = ANC yang ditandai terlewat
         // ──────────────────────────────────────────────────────────────
-        function updateAncButtons(completed, scheduled) {
+        function updateAncButtons(completed, scheduled, missed) {
             for (let i = 1; i <= 6; i++) {
                 const btn = document.getElementById('ancBtn' + i);
 
-                if (i <= completed) {
-                    // ANC sudah selesai — disabled dengan tanda centang
+                if (completed.includes(i)) {
+                    // Selesai & terkunci — abu-abu + centang
                     btn.disabled = true;
                     btn.textContent = 'ANC ke-' + i + ' ✓';
                     btn.className =
                         'anc-btn py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 text-xs font-bold text-gray-300 cursor-not-allowed';
+                } else if (missed.includes(i)) {
+                    // Missed — merah
+                    btn.disabled = true;
+                    btn.textContent = 'ANC ke-' + i + ' ✕';
+                    btn.className =
+                        'anc-btn py-3 rounded-2xl border-2 border-red-100 bg-red-50 text-xs font-bold text-red-300 cursor-not-allowed';
                 } else if (scheduled.includes(i)) {
-                    // Sudah terjadwal tapi belum selesai — disabled dengan ikon kalender
+                    // Sudah terjadwal belum selesai — biru
                     btn.disabled = true;
                     btn.textContent = 'ANC ke-' + i + ' 📅';
                     btn.className =
@@ -370,6 +397,111 @@
                 usgBanner.classList.remove('hidden');
             } else {
                 usgBanner.classList.add('hidden');
+            }
+
+            // Tampilkan slot kosong sebelum ANC yang dipilih
+            showMissedSlots(num);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Tampilkan panel slot missed — AJAX, tidak reload halaman
+        // ──────────────────────────────────────────────────────────────
+        let currentScheduledAnc = [];
+        let currentMissedAnc = [];
+        let currentMotherId = null;
+
+        function showMissedSlots(selectedAnc) {
+            const panel = document.getElementById('missedSlotsPanel');
+            const list = document.getElementById('missedSlotsList');
+
+            // Slot yang benar-benar kosong (belum scheduled, belum missed) sebelum ANC dipilih
+            const emptyBefore = [];
+            for (let i = 1; i < selectedAnc; i++) {
+                if (!currentScheduledAnc.includes(i) && !currentMissedAnc.includes(i)) {
+                    emptyBefore.push(i);
+                }
+            }
+
+            if (emptyBefore.length === 0 || !currentMotherId) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            list.innerHTML = emptyBefore.map(n => `
+                <button type="button"
+                    onclick="markMissedAjax(${n}, this)"
+                    id="missedBtn${n}"
+                    class="w-full flex items-center justify-between bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-4 py-3 hover:border-red-200 hover:bg-red-50 transition group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-300 group-hover:border-red-200 group-hover:text-red-300 transition">
+                            <span class="text-xs font-bold">${n}</span>
+                        </div>
+                        <span class="text-xs font-semibold text-gray-500 group-hover:text-red-500 transition">ANC ke-${n}</span>
+                    </div>
+                    <span class="text-[10px] bg-gray-100 text-gray-400 font-semibold px-2.5 py-1 rounded-xl group-hover:bg-red-100 group-hover:text-red-400 transition">
+                        Tandai Missed
+                    </span>
+                </button>
+            `).join('');
+
+            panel.classList.remove('hidden');
+        }
+
+        async function markMissedAjax(ancNumber, btn) {
+            if (!currentMotherId) return;
+
+            // Loading state
+            btn.disabled = true;
+            btn.querySelector('span:last-child').textContent = '...';
+
+            try {
+                const res = await fetch(`/midwife/schedules/missed-direct/${currentMotherId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        anc_number: ancNumber
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    alert(data.message ?? 'Gagal menandai missed.');
+                    btn.disabled = false;
+                    btn.querySelector('span:last-child').textContent = 'Tandai Missed';
+                    return;
+                }
+
+                // Tandai slot sebagai missed di state lokal
+                currentMissedAnc.push(ancNumber);
+
+                // Ambil completedAnc dari tombol yang sudah ✓
+                const completedNow = Array.from({
+                    length: 6
+                }, (_, i) => i + 1).filter(i => {
+                    const b = document.getElementById('ancBtn' + i);
+                    return b && b.disabled && b.textContent.includes('✓');
+                });
+
+                // Update tombol ANC grid — slot ini jadi merah
+                updateAncButtons(completedNow, currentScheduledAnc, currentMissedAnc);
+
+                // Hapus baris ini dari panel
+                btn.remove();
+
+                // Sembunyikan panel jika sudah tidak ada slot kosong
+                if (document.getElementById('missedSlotsList').children.length === 0) {
+                    document.getElementById('missedSlotsPanel').classList.add('hidden');
+                }
+
+            } catch (e) {
+                alert('Terjadi kesalahan jaringan.');
+                btn.disabled = false;
+                btn.querySelector('span:last-child').textContent = 'Tandai Missed';
             }
         }
 

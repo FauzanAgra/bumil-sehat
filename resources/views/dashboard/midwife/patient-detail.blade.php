@@ -18,6 +18,12 @@
 
     <main class="flex-1 overflow-y-auto px-6 py-6 space-y-6 pb-32">
 
+        @if (session('success'))
+            <div class="bg-green-50 border border-green-200 text-green-700 text-xs rounded-2xl px-4 py-3">
+                <i class="fa-solid fa-circle-check mr-1"></i> {{ session('success') }}
+            </div>
+        @endif
+
         {{-- PROFIL --}}
         <section
             class="bg-linear-to-br from-rose-500 to-rose-700 rounded-[2rem] p-5 text-white relative overflow-hidden shadow-lg shadow-rose-200">
@@ -69,19 +75,13 @@
 
         {{-- ALERT RISIKO --}}
         @if ($activeConditions->isNotEmpty())
-
             <div class="bg-red-50 border border-red-200 rounded-2xl p-4 flex gap-3">
-
                 <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5 shrink-0"></i>
-
                 <div>
-
                     <p class="text-xs font-bold text-red-700 mb-1">
                         Kondisi Aktif Terdeteksi
                     </p>
-
                     <div class="flex flex-wrap gap-1.5">
-
                         @foreach ($activeConditions as $condition)
                             <span
                                 class="text-[10px]
@@ -93,107 +93,76 @@
 
                             </span>
                         @endforeach
-
                     </div>
-
                 </div>
-
             </div>
-
         @endif
 
         {{-- DATA KEHAMILAN --}}
         <section class="space-y-3">
-
             <h3 class="text-sm font-bold text-gray-700 px-1">
                 Data Kehamilan
             </h3>
-
             <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-0">
-
                 <div class="flex items-center justify-between py-3 border-b border-gray-50">
-
                     <div class="flex items-center gap-3">
-
                         <div class="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
                             <i class="fa-regular fa-calendar text-xs"></i>
                         </div>
-
                         <span class="text-sm text-gray-600">
                             HPHT
                         </span>
-
                     </div>
-
                     <span class="text-sm font-bold text-gray-800">
                         {{ $pregnancy?->hpht_date?->translatedFormat('d M Y') ?? '—' }}
                     </span>
-
                 </div>
 
                 <div class="flex items-center justify-between py-3 border-b border-gray-50">
-
                     <div class="flex items-center gap-3">
-
                         <div class="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center text-blue-400">
                             <i class="fa-solid fa-baby text-xs"></i>
                         </div>
-
                         <span class="text-sm text-gray-600">
                             Usia Kehamilan
                         </span>
-
                     </div>
-
                     <span class="text-sm font-bold text-gray-800">
                         {{ $pregnancy?->gestational_week ?? '—' }} Minggu
                     </span>
-
                 </div>
 
                 <div class="flex items-center justify-between py-3 border-b border-gray-50">
-
                     <div class="flex items-center gap-3">
-
                         <div class="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center text-purple-400">
                             <i class="fa-solid fa-star text-xs"></i>
                         </div>
-
                         <span class="text-sm text-gray-600">
                             HPL (Perkiraan)
                         </span>
-
                     </div>
 
                     <span class="text-sm font-bold text-gray-800">
                         {{ $pregnancy?->hpl_date?->translatedFormat('d M Y') ?? '—' }}
                     </span>
-
                 </div>
 
                 <div class="flex items-center justify-between py-3">
-
                     <div class="flex items-center gap-3">
-
                         <div class="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center text-green-400">
                             <i class="fa-solid fa-map-pin text-xs"></i>
                         </div>
-
                         <span class="text-sm text-gray-600">
                             Wilayah
                         </span>
-
                     </div>
 
                     <span class="text-sm font-bold text-gray-800">
                         {{ $motherProfile->subdistrict->name }}
                         · RW {{ $motherProfile->area->rw_number }}
                     </span>
-
                 </div>
-
             </div>
-
         </section>
 
         {{-- TIMELINE ANC --}}
@@ -264,6 +233,12 @@
                                     </p>
                                 @endif
                             </div>
+                            {{-- Tombol tandai missed untuk slot kosong --}}
+                            <button type="button"
+                                onclick="openMissedModal({{ $motherProfile->id }}, {{ $item['anc_number'] }})"
+                                class="text-[11px] bg-gray-100 text-gray-400 font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap hover:bg-red-50 hover:text-red-400 transition">
+                                Missed
+                            </button>
                         </div>
                     @elseif ($item['is_locked'])
                         <div class="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm flex items-center gap-3">
@@ -367,6 +342,16 @@
                                     class="text-[11px] bg-blue-50 text-blue-500 font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap hover:bg-blue-100 transition">
                                     Edit
                                 </button>
+                                <form method="POST"
+                                    action="{{ route('midwife.schedules.missed', $item['schedule']->id) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit"
+                                        onclick="return confirm('Tandai ANC ke-{{ $item['anc_number'] }} sebagai terlewat?')"
+                                        class="text-[11px] bg-gray-100 text-gray-400 font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap hover:bg-red-50 hover:text-red-400 transition">
+                                        Missed
+                                    </button>
+                                </form>
                             </div>
 
                         </div>
@@ -394,7 +379,6 @@
                                 class="fa-solid {{ $conditionStyles[$condition->condition_type]['icon'] ?? 'fa-circle' }}
                         {{ $conditionStyles[$condition->condition_type]['text'] ?? 'text-gray-500' }} text-sm">
                             </i>
-
                         </div>
 
                         <div class="flex-1">
@@ -438,35 +422,25 @@
                     @endunless
 
                 @empty
-
                     <div class="flex items-center gap-3">
-
                         <div class="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
                             <i class="fa-solid fa-circle-check text-gray-300 text-sm"></i>
                         </div>
-
                         <div class="flex-1">
-
                             <p class="text-xs font-bold text-gray-400">
                                 Tidak ada kondisi risiko
                             </p>
-
                             <p class="text-[10px] text-gray-300">
                                 Semua pemeriksaan normal
                             </p>
-
                         </div>
-
                         <span
                             class="text-[9px] font-bold bg-green-50 text-green-500 px-2 py-1 rounded-full whitespace-nowrap">
                             Normal
                         </span>
-
                     </div>
                 @endforelse
-
             </div>
-
         </section>
 
         {{-- PEMANTAUAN TTD --}}
@@ -476,9 +450,7 @@
             </h3>
 
             <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
-
                 <div class="flex items-center justify-between">
-
                     <div class="flex items-center gap-3">
 
                         <div class="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
@@ -504,7 +476,6 @@
                         </div>
 
                     </div>
-
                     <span
                         class="text-[10px] px-2.5 py-1 rounded-full font-bold
                 {{ $ttdStatus?->is_active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400' }}">
@@ -540,27 +511,21 @@
         {{ $ttdStatus?->is_active ? 'bg-rose-400 justify-end' : 'bg-gray-200 justify-start' }}">
 
                         <div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
-
                     </button>
                 </div>
             </div>
-
-
         </section>
 
         {{-- KONTAK IBU --}}
         <section class="space-y-3">
-
             <h3 class="text-sm font-bold text-gray-700 px-1">
                 Kontak Ibu
             </h3>
-
             <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
 
                 <div class="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center shrink-0">
                     <i class="fa-brands fa-whatsapp text-green-500 text-lg"></i>
                 </div>
-
                 <div class="flex-1">
 
                     <p class="text-sm font-bold text-gray-800">
@@ -585,6 +550,38 @@
             </div>
 
         </section>
+
+        {{-- MODAL TANDAI MISSED (slot kosong — belum ada schedule) --}}
+        <div id="missedModal"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-[999] hidden">
+            <div class="w-full max-w-md bg-white rounded-t-[2.5rem] p-6 space-y-4 shadow-2xl">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto"></div>
+                <div class="text-center space-y-1 pt-1">
+                    <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto">
+                        <i class="fa-solid fa-calendar-xmark text-red-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800 mt-2">Tandai ANC Terlewat?</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed" id="missedModalDesc">
+                        ANC ini akan ditandai sebagai terlewat. Tidak ada data ANC yang akan tersimpan.
+                    </p>
+                </div>
+                <form id="missedForm" method="POST"
+                    action="{{ route('midwife.schedules.missed.direct', $motherProfile->id) }}">
+                    @csrf
+                    <input type="hidden" name="anc_number" id="missedAncNumber">
+                    <div class="space-y-3 pt-2">
+                        <button type="submit"
+                            class="w-full bg-red-400 hover:bg-red-500 text-white font-bold py-3.5 rounded-2xl transition">
+                            Ya, Tandai Terlewat
+                        </button>
+                        <button type="button" onclick="closeMissedModal()"
+                            class="w-full text-sm font-semibold text-gray-500 py-2 hover:text-gray-700 transition">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         {{-- MODAL EDIT --}}
         <div id="editModal"
@@ -650,6 +647,17 @@
 
         function closeEditModal() {
             document.getElementById('editModal').classList.add('hidden');
+        }
+
+        function openMissedModal(motherProfileId, ancNumber) {
+            document.getElementById('missedAncNumber').value = ancNumber;
+            document.getElementById('missedModalDesc').textContent =
+                `ANC ke-${ancNumber} akan ditandai sebagai terlewat. Tidak ada data ANC yang akan tersimpan.`;
+            document.getElementById('missedModal').classList.remove('hidden');
+        }
+
+        function closeMissedModal() {
+            document.getElementById('missedModal').classList.add('hidden');
         }
 
         async function toggleTtd() {
