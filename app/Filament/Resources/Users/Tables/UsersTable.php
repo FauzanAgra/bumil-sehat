@@ -37,17 +37,17 @@ class UsersTable
                 TextColumn::make('role')
                     ->label('Role')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'admin'   => 'primary',
+                    ->color(fn (string $state) => match ($state) {
+                        'admin' => 'primary',
                         'midwife' => 'warning',
-                        'doctor'  => 'info',
-                        'mother'  => 'success',
+                        'doctor' => 'info',
+                        'mother' => 'success',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'admin'   => 'Admin',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'admin' => 'Admin',
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
-                        'mother'  => 'Ibu Hamil',
+                        'doctor' => 'Dokter',
+                        'mother' => 'Ibu Hamil',
                     }),
 
                 IconColumn::make('is_verified')
@@ -64,10 +64,10 @@ class UsersTable
                 SelectFilter::make('role')
                     ->label('Role')
                     ->options([
-                        'mother'  => 'Ibu Hamil',
+                        'mother' => 'Ibu Hamil',
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
-                        'admin'   => 'Admin',
+                        'doctor' => 'Dokter',
+                        'admin' => 'Admin',
                     ]),
 
                 SelectFilter::make('is_verified')

@@ -25,7 +25,7 @@ class AncRecordsTable
                     ->label('ANC ke-')
                     ->badge()
                     ->color('info')
-                    ->formatStateUsing(fn($state) => 'ANC ' . $state),
+                    ->formatStateUsing(fn ($state) => 'ANC '.$state),
 
                 TextColumn::make('weight')
                     ->label('BB (kg)')
@@ -36,14 +36,13 @@ class AncRecordsTable
                     ->label('LILA (cm)')
                     ->numeric(1)
                     ->placeholder('-')
-                    ->color(fn($state) => $state && $state < 23.5 ? 'danger' : null),
+                    ->color(fn ($state) => $state && $state < 23.5 ? 'danger' : null),
 
                 TextColumn::make('systolic')
                     ->label('TD')
                     ->getStateUsing(
-                        fn($record) =>
-                        $record->systolic && $record->diastolic
-                            ? $record->systolic . '/' . $record->diastolic
+                        fn ($record) => $record->systolic && $record->diastolic
+                            ? $record->systolic.'/'.$record->diastolic
                             : '-'
                     ),
 
@@ -51,14 +50,14 @@ class AncRecordsTable
                     ->label('HB (g/dL)')
                     ->numeric(1)
                     ->placeholder('-')
-                    ->color(fn($state) => $state && $state < 11 ? 'danger' : null),
+                    ->color(fn ($state) => $state && $state < 11 ? 'danger' : null),
 
                 TextColumn::make('detectedConditions_count')
                     ->label('Kondisi Risiko')
                     ->counts('detectedConditions')
                     ->badge()
-                    ->color(fn($state) => $state > 0 ? 'danger' : 'success')
-                    ->formatStateUsing(fn($state) => $state > 0 ? $state . ' kondisi' : 'Normal'),
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state.' kondisi' : 'Normal'),
 
                 IconColumn::make('is_locked')
                     ->label('Dikunci')

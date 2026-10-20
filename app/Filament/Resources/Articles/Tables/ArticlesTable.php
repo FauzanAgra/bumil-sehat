@@ -24,27 +24,27 @@ class ArticlesTable
                     ->label('Thumbnail')
                     ->disk('public')
                     ->square()
-                    ->defaultImageUrl(fn() => 'https://placehold.co/60x60?text=No+Image'),
+                    ->defaultImageUrl(fn () => 'https://placehold.co/60x60?text=No+Image'),
 
                 TextColumn::make('title')
                     ->label('Judul')
                     ->searchable()
                     ->sortable()
                     ->limit(50)
-                    ->tooltip(fn(string $state) => $state),
+                    ->tooltip(fn (string $state) => $state),
 
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
+                    ->color(fn (string $state) => match ($state) {
                         'published' => 'success',
-                        'draft'     => 'gray',
-                        default     => 'gray',
+                        'draft' => 'gray',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
+                    ->formatStateUsing(fn (string $state) => match ($state) {
                         'published' => 'Published',
-                        'draft'     => 'Draft',
-                        default     => $state,
+                        'draft' => 'Draft',
+                        default => $state,
                     }),
 
                 TextColumn::make('min_week')
@@ -53,7 +53,8 @@ class ArticlesTable
                         if (! $record->min_week && ! $record->max_week) {
                             return 'Semua';
                         }
-                        return ($record->min_week ?? '?') . '–' . ($record->max_week ?? '?');
+
+                        return ($record->min_week ?? '?').'–'.($record->max_week ?? '?');
                     }),
 
                 TextColumn::make('createdBy.name')
@@ -76,7 +77,7 @@ class ArticlesTable
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'draft'     => 'Draft',
+                        'draft' => 'Draft',
                         'published' => 'Published',
                     ]),
 

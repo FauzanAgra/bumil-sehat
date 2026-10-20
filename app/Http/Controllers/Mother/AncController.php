@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Auth;
 
 class AncController extends Controller
 {
-    //Riwayat semua jadwal ANC
+    // Riwayat semua jadwal ANC
     public function history()
     {
-        $user          = Auth::user();
+        $user = Auth::user();
         $motherProfile = $user->motherProfile;
-        $pregnancy     = $motherProfile?->activePregnancy;
+        $pregnancy = $motherProfile?->activePregnancy;
 
         if (! $pregnancy) {
             return redirect()->route('mother.dashboard');
@@ -39,10 +39,10 @@ class AncController extends Controller
         ));
     }
 
-    // ── Detail satu ANC 
+    // ── Detail satu ANC
     public function detail(AncSchedule $schedule)
     {
-        $user          = Auth::user();
+        $user = Auth::user();
         $motherProfile = $user->motherProfile;
 
         // Pastikan jadwal ini milik ibu yang login
@@ -60,10 +60,10 @@ class AncController extends Controller
         ));
     }
 
-    //  Form input ANC 
+    //  Form input ANC
     public function form(AncSchedule $schedule)
     {
-        $user          = Auth::user();
+        $user = Auth::user();
         $motherProfile = $user->motherProfile;
 
         abort_if(
@@ -89,10 +89,10 @@ class AncController extends Controller
         ));
     }
 
-    //  Simpan data ANC 
+    //  Simpan data ANC
     public function store(Request $request, AncSchedule $schedule)
     {
-        $user          = Auth::user();
+        $user = Auth::user();
         $motherProfile = $user->motherProfile;
 
         abort_if(
@@ -106,16 +106,16 @@ class AncController extends Controller
         }
 
         $request->validate([
-            'weight'           => ['nullable', 'numeric', 'min:20', 'max:200'],
-            'height'           => ['nullable', 'numeric', 'min:100', 'max:250'],
-            'lila'             => ['nullable', 'numeric', 'min:10', 'max:50'],
-            'systolic'         => ['nullable', 'integer', 'min:60', 'max:250'],
-            'diastolic'        => ['nullable', 'integer', 'min:40', 'max:150'],
-            'hb'               => ['nullable', 'numeric', 'min:5', 'max:20'],
-            'tt_status'        => ['nullable', 'in:done,not_done'],
-            'fetal_position'   => ['nullable', 'in:head_down,transverse,breech'],
+            'weight' => ['nullable', 'numeric', 'min:20', 'max:200'],
+            'height' => ['nullable', 'numeric', 'min:100', 'max:250'],
+            'lila' => ['nullable', 'numeric', 'min:10', 'max:50'],
+            'systolic' => ['nullable', 'integer', 'min:60', 'max:250'],
+            'diastolic' => ['nullable', 'integer', 'min:40', 'max:150'],
+            'hb' => ['nullable', 'numeric', 'min:5', 'max:20'],
+            'tt_status' => ['nullable', 'in:done,not_done'],
+            'fetal_position' => ['nullable', 'in:head_down,transverse,breech'],
             'fetal_heart_rate' => ['nullable', 'integer', 'min:60', 'max:200'],
-            'usg_image'        => ['nullable', 'image', 'max:2048'],
+            'usg_image' => ['nullable', 'image', 'max:2048'],
         ]);
 
         $data = $request->only([
@@ -130,9 +130,9 @@ class AncController extends Controller
             'fetal_heart_rate',
         ]);
 
-        $data['schedule_id']  = $schedule->id;
-        $data['mother_id']    = $motherProfile->id;
-        $data['recorded_by']  = $user->id;
+        $data['schedule_id'] = $schedule->id;
+        $data['mother_id'] = $motherProfile->id;
+        $data['recorded_by'] = $user->id;
         $data['submitted_at'] = now();
 
         // Update atau buat baru

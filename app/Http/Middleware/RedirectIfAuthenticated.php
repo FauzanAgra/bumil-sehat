@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Providers\RouteServiceProvider;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,11 +23,11 @@ class RedirectIfAuthenticated
                 $user = Auth::guard($guard)->user();
 
                 $dashboard = match ($user->role) {
-                    'mother'  => route('mother.dashboard'),
+                    'mother' => route('mother.dashboard'),
                     'midwife' => route('midwife.dashboard'),
-                    'doctor'  => route('doctor.dashboard'),
-                    'admin'   => route('admin.dashboard'),
-                    default   => route('mother.dashboard'),
+                    'doctor' => route('doctor.dashboard'),
+                    'admin' => route('admin.dashboard'),
+                    default => route('mother.dashboard'),
                 };
 
                 return redirect($dashboard);

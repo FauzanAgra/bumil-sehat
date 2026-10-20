@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(NIKService::class, function () {
-            return new NIKService();
+            return new NIKService;
         });
     }
 

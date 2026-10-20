@@ -22,17 +22,17 @@ return new class extends Migration
                 ->restrictOnDelete();
 
             // Data Fisik
-            $table->decimal('weight', 5, 2)->nullable(); //kg
-            $table->decimal('height', 5, 2)->nullable(); //cm
-            $table->decimal('lila', 5, 2)->nullable(); //cm
-            $table->unsignedSmallInteger('systolic')->nullable(); //mmHg
-            $table->unsignedSmallInteger('diastolic')->nullable(); //mmHg
+            $table->decimal('weight', 5, 2)->nullable(); // kg
+            $table->decimal('height', 5, 2)->nullable(); // cm
+            $table->decimal('lila', 5, 2)->nullable(); // cm
+            $table->unsignedSmallInteger('systolic')->nullable(); // mmHg
+            $table->unsignedSmallInteger('diastolic')->nullable(); // mmHg
             $table->decimal('hb', 4, 1)->nullable(); // g/dL
 
             // Status Pemeriksaan
             $table->enum('tt_status', ['done', 'not_done'])->nullable();
             $table->enum('fetal_position', ['head_down', 'transverse', 'breech'])->nullable();
-            $table->unsignedSmallInteger('fetal_heart_rate')->nullable(); //bpm
+            $table->unsignedSmallInteger('fetal_heart_rate')->nullable(); // bpm
 
             // Audit Data
             $table->foreignId('recorded_by')->constrained('users')->restrictOnDelete();

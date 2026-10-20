@@ -22,15 +22,15 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'phone'    => ['required', 'string'],
+            'phone' => ['required', 'string'],
             'password' => ['required', 'string'],
         ], [
-            'phone.required'    => 'Nomor HP wajib diisi.',
+            'phone.required' => 'Nomor HP wajib diisi.',
             'password.required' => 'Kata sandi wajib diisi.',
         ]);
 
         $credentials = [
-            'phone'    => $request->phone,
+            'phone' => $request->phone,
             'password' => $request->password,
         ];
 
@@ -63,11 +63,11 @@ class LoginController extends Controller
         }
 
         return match ($user->role) {
-            'admin'   => redirect('/admin'),
+            'admin' => redirect('/admin'),
             'midwife' => redirect()->route('midwife.dashboard'),
-            'doctor'  => redirect()->route('doctor.dashboard'),
-            'mother'  => redirect()->route('mother.dashboard'),
-            default   => redirect()->route('login'),
+            'doctor' => redirect()->route('doctor.dashboard'),
+            'mother' => redirect()->route('mother.dashboard'),
+            default => redirect()->route('login'),
         };
     }
 }

@@ -23,8 +23,7 @@ class MotherProfileInfolist
                         TextEntry::make('nik_masked')
                             ->label('NIK')
                             ->getStateUsing(
-                                fn($record) =>
-                                app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
+                                fn ($record) => app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
                             )
                             ->fontFamily('mono'),
 
@@ -49,7 +48,7 @@ class MotherProfileInfolist
 
                         TextEntry::make('area.rw_number')
                             ->label('RW')
-                            ->formatStateUsing(fn($state) => $state),
+                            ->formatStateUsing(fn ($state) => $state),
 
                         TextEntry::make('assignedMidwife.name')
                             ->label('Bidan Pendamping')
@@ -72,15 +71,15 @@ class MotherProfileInfolist
                         TextEntry::make('activePregnancy.status')
                             ->label('Status')
                             ->badge()
-                            ->color(fn(?string $state) => match ($state) {
-                                'active'    => 'success',
+                            ->color(fn (?string $state) => match ($state) {
+                                'active' => 'success',
                                 'completed' => 'gray',
-                                default     => 'gray',
+                                default => 'gray',
                             })
-                            ->formatStateUsing(fn(?string $state) => match ($state) {
-                                'active'    => 'Aktif',
+                            ->formatStateUsing(fn (?string $state) => match ($state) {
+                                'active' => 'Aktif',
                                 'completed' => 'Selesai',
-                                default     => '-',
+                                default => '-',
                             }),
                     ]),
             ]);

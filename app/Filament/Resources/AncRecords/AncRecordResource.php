@@ -24,8 +24,11 @@ class AncRecordResource extends Resource
     protected static ?string $recordTitleAttribute = 'id';
 
     protected static ?string $navigationLabel = 'Data ANC';
+
     protected static ?string $pluralModelLabel = 'Data ANC';
+
     protected static ?string $modelLabel = 'Data ANC';
+
     protected static ?int $navigationSort = 3;
 
     public static function getNavigationGroup(): ?string
@@ -52,7 +55,7 @@ class AncRecordResource extends Resource
     {
         return [
             'index' => ListAncRecords::route('/'),
-            'view'  => ViewAncRecord::route('/{record}'),
+            'view' => ViewAncRecord::route('/{record}'),
         ];
     }
 
@@ -66,10 +69,12 @@ class AncRecordResource extends Resource
     {
         return false;
     }
+
     public static function canEdit($record): bool
     {
         return false;
     }
+
     public static function canDelete($record): bool
     {
         return false;

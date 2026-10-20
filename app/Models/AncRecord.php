@@ -27,16 +27,16 @@ class AncRecord extends Model
         'fetal_position',
         'fetal_heart_rate',
         'is_locked',
-        'submitted_at'
+        'submitted_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'weight'    => 'decimal:2',
-            'height'    => 'decimal:2',
-            'lila'      => 'decimal:2',
-            'hb'        => 'decimal:1',
+            'weight' => 'decimal:2',
+            'height' => 'decimal:2',
+            'lila' => 'decimal:2',
+            'hb' => 'decimal:1',
             'is_locked' => 'boolean',
             'submitted_at' => 'datetime',
         ];
@@ -98,12 +98,12 @@ class AncRecord extends Model
                 ['condition_type' => 'kek'],
                 [
                     'status' => 'detected',
-                    'detected_at' => now()
+                    'detected_at' => now(),
                 ]
             );
         }
 
-        //Preeklampsia: systolic >= 140 OR diastolic >= 90
+        // Preeklampsia: systolic >= 140 OR diastolic >= 90
         if (($this->systolic !== null && $this->systolic >= 140) ||
             ($this->diastolic !== null && $this->diastolic >= 90)
         ) {
@@ -111,7 +111,7 @@ class AncRecord extends Model
                 ['condition_type' => 'preeclampsia'],
                 [
                     'status' => 'detected',
-                    'detected_at' => now()
+                    'detected_at' => now(),
                 ]
             );
         }
@@ -122,7 +122,7 @@ class AncRecord extends Model
                 ['condition_type' => 'anemia'],
                 [
                     'status' => 'detected',
-                    'detected_at' => now()
+                    'detected_at' => now(),
                 ]
             );
         }
@@ -146,7 +146,7 @@ class AncRecord extends Model
             ->toArray();
 
         // KEK
-        if ($this->lila !== null && $this->lila < 23.5 && !in_array('kek', $finalConditions)) {
+        if ($this->lila !== null && $this->lila < 23.5 && ! in_array('kek', $finalConditions)) {
             $this->detectedConditions()->firstOrCreate(
                 ['condition_type' => 'kek'],
                 ['status' => 'detected', 'detected_at' => now()]
@@ -156,7 +156,7 @@ class AncRecord extends Model
         // Preeklampsia
         if ((($this->systolic !== null && $this->systolic >= 140) ||
                 ($this->diastolic !== null && $this->diastolic >= 90))
-            && !in_array('preeclampsia', $finalConditions)
+            && ! in_array('preeclampsia', $finalConditions)
         ) {
             $this->detectedConditions()->firstOrCreate(
                 ['condition_type' => 'preeclampsia'],
@@ -167,7 +167,7 @@ class AncRecord extends Model
         // Anemia
         if (
             $this->hb !== null && $this->hb < 11.0
-            && !in_array('anemia', $finalConditions)
+            && ! in_array('anemia', $finalConditions)
         ) {
             $this->detectedConditions()->firstOrCreate(
                 ['condition_type' => 'anemia'],
@@ -181,6 +181,7 @@ class AncRecord extends Model
     {
         return $this->validation()->exists();
     }
+
     public function hasAnyCondition(): bool
     {
         return $this->detectedConditions()->exists();
@@ -192,6 +193,7 @@ class AncRecord extends Model
             return null;
         }
         $heightM = $this->height / 100;
+
         return round($this->weight / ($heightM ** 2), 1);
     }
 

@@ -30,7 +30,7 @@ class MidwifeAreasTable
                     ->label('RW')
                     ->badge()
                     ->color('gray')
-                    ->formatStateUsing(fn(string $state) => 'RW ' . $state),
+                    ->formatStateUsing(fn (string $state) => 'RW '.$state),
 
                 IconColumn::make('is_active')
                     ->label('Aktif')

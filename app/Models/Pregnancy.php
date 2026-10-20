@@ -17,14 +17,14 @@ class Pregnancy extends Model
         'mother_id',
         'hpht_date',
         'hpl_date',
-        'status'
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'hpht_date'  => 'date',
-            'hpl_date'   => 'date',
+            'hpht_date' => 'date',
+            'hpl_date' => 'date',
         ];
     }
 

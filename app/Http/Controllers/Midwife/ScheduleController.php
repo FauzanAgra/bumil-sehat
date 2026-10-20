@@ -6,40 +6,39 @@ use App\Http\Controllers\Controller;
 use App\Models\AncSchedule;
 use App\Models\MotherProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
     public function index(Request $request)
     {
-        $user   = auth()->user();
+        $user = auth()->user();
         $filter = $request->get('filter', 'today');
 
         $query = AncSchedule::whereHas('pregnancy', function ($q) use ($user) {
             $q->whereHas(
                 'mother',
-                fn($q2) => $q2->where('assigned_midwife_id', $user->id)
+                fn ($q2) => $q2->where('assigned_midwife_id', $user->id)
             );
         })->where('status', '!=', 'missed')
             ->with(['pregnancy.mother.user', 'ancRecord.detectedConditions']);
 
         $query = match ($filter) {
-            'today'    => $query->where('schedule_date', today()),
+            'today' => $query->where('schedule_date', today()),
             'tomorrow' => $query->where('schedule_date', today()->addDay()),
-            'week'     => $query->whereBetween('schedule_date', [today(), today()->endOfWeek()]),
-            default    => $query->where('schedule_date', '>=', today()),
+            'week' => $query->whereBetween('schedule_date', [today(), today()->endOfWeek()]),
+            default => $query->where('schedule_date', '>=', today()),
         };
 
         $schedules = $query->orderBy('schedule_date')->orderBy('schedule_time')->get();
 
         // Summary dari collection — tidak ada query tambahan
         $summary = [
-            'validasi'    => $schedules->filter(
-                fn($s) => $s->ancRecord && ! $s->ancRecord->is_locked && ! $s->ancRecord->validation
+            'validasi' => $schedules->filter(
+                fn ($s) => $s->ancRecord && ! $s->ancRecord->is_locked && ! $s->ancRecord->validation
             )->count(),
-            'belum_input' => $schedules->filter(fn($s) => ! $s->ancRecord)->count(),
-            'risiko'      => $schedules->filter(
-                fn($s) => $s->ancRecord?->detectedConditions->where('status', 'detected')->isNotEmpty()
+            'belum_input' => $schedules->filter(fn ($s) => ! $s->ancRecord)->count(),
+            'risiko' => $schedules->filter(
+                fn ($s) => $s->ancRecord?->detectedConditions->where('status', 'detected')->isNotEmpty()
             )->count(),
         ];
 
@@ -62,29 +61,29 @@ class ScheduleController extends Controller
                 'ancRecords.detectedConditions',
             ])
             ->get()
-            ->filter(fn($m) => $m->activePregnancy)
+            ->filter(fn ($m) => $m->activePregnancy)
             ->map(function ($m) {
                 $m->has_risk = $m->ancRecords->contains(
-                    fn($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
+                    fn ($r) => $r->detectedConditions->where('status', 'detected')->isNotEmpty()
                 );
 
                 $schedules = $m->activePregnancy->ancSchedules;
 
                 // ANC yang locked (selesai) — tidak bisa dipilih lagi
                 $m->completed_anc = $schedules
-                    ->filter(fn($s) => $s->ancRecord?->is_locked)
+                    ->filter(fn ($s) => $s->ancRecord?->is_locked)
                     ->pluck('anc_number')
                     ->toArray();
 
                 // ANC yang terjadwal (belum selesai, bukan missed) — tidak bisa duplikat
                 $m->scheduled_anc = $schedules
-                    ->filter(fn($s) => $s->status === 'scheduled')
+                    ->filter(fn ($s) => $s->status === 'scheduled')
                     ->pluck('anc_number')
                     ->toArray();
 
                 // ANC yang missed — tampil merah, tidak bisa dipilih
                 $m->missed_anc = $schedules
-                    ->filter(fn($s) => $s->status === 'missed')
+                    ->filter(fn ($s) => $s->status === 'missed')
                     ->pluck('anc_number')
                     ->toArray();
 
@@ -110,10 +109,10 @@ class ScheduleController extends Controller
 
         $request->validate([
             'mother_profile_id' => ['required', 'integer'],
-            'anc_number'        => ['required', 'integer', 'min:1', 'max:6'],
-            'schedule_date'     => ['required', 'date', 'after_or_equal:today'],
-            'schedule_time'     => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00'],
-            'note'              => ['nullable', 'string', 'max:255'],
+            'anc_number' => ['required', 'integer', 'min:1', 'max:6'],
+            'schedule_date' => ['required', 'date', 'after_or_equal:today'],
+            'schedule_time' => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00'],
+            'note' => ['nullable', 'string', 'max:255'],
         ]);
 
         // Fix A5: cek ownership sekaligus — 1 query, langsung 404 jika tidak valid
@@ -138,22 +137,22 @@ class ScheduleController extends Controller
             return back()
                 ->withInput()
                 ->withErrors([
-                    'anc_number' => 'Jadwal ANC ke-' . $request->anc_number . ' sudah ada.',
+                    'anc_number' => 'Jadwal ANC ke-'.$request->anc_number.' sudah ada.',
                 ]);
         }
 
         $pregnancy->ancSchedules()->create([
-            'anc_number'    => $request->anc_number,
+            'anc_number' => $request->anc_number,
             'schedule_date' => $request->schedule_date,
             'schedule_time' => $request->schedule_time,
-            'note'          => $request->note,
-            'status'        => 'scheduled',
-            'created_by'    => $user->id,
+            'note' => $request->note,
+            'status' => 'scheduled',
+            'created_by' => $user->id,
         ]);
 
         return redirect()
             ->route('midwife.schedules')
-            ->with('success', 'Jadwal ANC ke-' . $request->anc_number . ' berhasil dibuat.');
+            ->with('success', 'Jadwal ANC ke-'.$request->anc_number.' berhasil dibuat.');
     }
 
     public function markMissedDirect(Request $request, MotherProfile $motherProfile)
@@ -180,18 +179,18 @@ class ScheduleController extends Controller
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'message' => 'ANC ke-' . $request->anc_number . ' sudah ada.',
+                'message' => 'ANC ke-'.$request->anc_number.' sudah ada.',
             ], 422);
         }
 
         $pregnancy->ancSchedules()->create([
-            'anc_number'    => $request->anc_number,
+            'anc_number' => $request->anc_number,
             'schedule_date' => now()->toDateString(),
-            'status'        => 'missed',
-            'created_by'    => $user->id,
+            'status' => 'missed',
+            'created_by' => $user->id,
         ]);
 
-        return back()->with('success', 'ANC ke-' . $request->anc_number . ' ditandai sebagai terlewat.');
+        return back()->with('success', 'ANC ke-'.$request->anc_number.' ditandai sebagai terlewat.');
     }
 
     public function markMissed(AncSchedule $schedule)
@@ -217,14 +216,14 @@ class ScheduleController extends Controller
 
         $schedule->update(['status' => 'missed']);
 
-        return back()->with('success', 'ANC ke-' . $schedule->anc_number . ' ditandai sebagai terlewat.');
+        return back()->with('success', 'ANC ke-'.$schedule->anc_number.' ditandai sebagai terlewat.');
     }
 
     public function update(Request $request, AncSchedule $schedule)
     {
         $request->validate([
             'schedule_date' => ['required', 'date'],
-            'schedule_time' => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00']
+            'schedule_time' => ['nullable', 'in:08:00,09:00,10:00,11:00,13:00,14:00'],
         ]);
 
         $schedule->load('pregnancy.mother');

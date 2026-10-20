@@ -16,8 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('mother_profile_id')->index();
             $table->enum('action', ['READ', 'DECRYPT', 'WRITE', 'UPDATE', 'DELETE', 'FAILED']);
             $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('actor_role', 20);  //admin|midwife|doctor|mother|system
-            $table->string('ip_address', 45); //IPv4 & IPv6
+            $table->string('actor_role', 20);  // admin|midwife|doctor|mother|system
+            $table->string('ip_address', 45); // IPv4 & IPv6
             $table->text('user_agent')->nullable();
             $table->json('metadata')->nullable();
             $table->boolean('is_anomaly')->default(false)->index();
@@ -36,7 +36,7 @@ return new class extends Migration
     {
         // Cannot drop in Production mode
         if (app()->isProduction()) {
-            throw new \Exception(
+            throw new Exception(
                 'Tabel nik_audit_logs tidak dapat dihapus di production (UU PDP).'
             );
         }

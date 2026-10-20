@@ -22,7 +22,7 @@ class SubdistrictSeeder extends Seeder
             foreach ($rws as $rw) {
                 Area::firstOrCreate([
                     'subdistrict_id' => $subdistrict->id,
-                    'rw_number'      => $rw,
+                    'rw_number' => $rw,
                 ]);
             }
         }

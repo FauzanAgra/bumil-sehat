@@ -15,7 +15,7 @@ class Specialization extends Model
         'color',
         'wa_greeting',
         'is_active',
-        'sort_order'
+        'sort_order',
     ];
 
     protected function casts(): array
@@ -29,7 +29,7 @@ class Specialization extends Model
     // Relations
     public function medicalProfiles(): HasMany
     {
-        return  $this->hasMany(MedicalProfile::class);
+        return $this->hasMany(MedicalProfile::class);
     }
 
     // Scopes

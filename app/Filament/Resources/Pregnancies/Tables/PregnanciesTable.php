@@ -32,15 +32,15 @@ class PregnanciesTable
 
                 TextColumn::make('gestational_week')
                     ->label('Usia Kehamilan')
-                    ->getStateUsing(fn($record) => $record->gestational_week . ' minggu')
+                    ->getStateUsing(fn ($record) => $record->gestational_week.' minggu')
                     ->badge()
                     ->color('info'),
 
                 TextColumn::make('trimester')
                     ->label('Trimester')
-                    ->getStateUsing(fn($record) => 'Trimester ' . $record->trimester)
+                    ->getStateUsing(fn ($record) => 'Trimester '.$record->trimester)
                     ->badge()
-                    ->color(fn($record) => match ($record->trimester) {
+                    ->color(fn ($record) => match ($record->trimester) {
                         1 => 'success',
                         2 => 'warning',
                         3 => 'danger',
@@ -48,19 +48,19 @@ class PregnanciesTable
 
                 TextColumn::make('completed_anc_count')
                     ->label('ANC Selesai')
-                    ->getStateUsing(fn($record) => $record->completed_anc_count . ' / 6')
+                    ->getStateUsing(fn ($record) => $record->completed_anc_count.' / 6')
                     ->badge()
                     ->color('gray'),
 
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'active'    => 'success',
+                    ->color(fn (string $state) => match ($state) {
+                        'active' => 'success',
                         'completed' => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'active'    => 'Aktif',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'active' => 'Aktif',
                         'completed' => 'Selesai',
                     }),
 
@@ -74,7 +74,7 @@ class PregnanciesTable
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'active'    => 'Aktif',
+                        'active' => 'Aktif',
                         'completed' => 'Selesai',
                     ]),
 

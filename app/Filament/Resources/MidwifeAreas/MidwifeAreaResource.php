@@ -23,8 +23,11 @@ class MidwifeAreaResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static ?int $navigationSort = 2;
+
     protected static ?string $navigationLabel = 'Area Bidan';
+
     protected static ?string $pluralModelLabel = 'Area Bidan';
+
     protected static ?string $modelLabel = 'Area Bidan';
 
     public static function form(Schema $schema): Schema

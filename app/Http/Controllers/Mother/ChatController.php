@@ -10,12 +10,13 @@ class ChatController extends Controller
 {
     public function __invoke()
     {
-        $user    = Auth::user();
+        $user = Auth::user();
         $midwife = $user->motherProfile?->assignedMidwife;
-        $staff   = User::whereIn('role', ['midwife', 'doctor'])
+        $staff = User::whereIn('role', ['midwife', 'doctor'])
             ->where('is_verified', true)
             ->with('medicalProfile.specialization')
             ->get();
+
         return view('dashboard.mother.chat', compact('user', 'midwife', 'staff'));
     }
 }

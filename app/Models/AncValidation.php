@@ -11,13 +11,13 @@ class AncValidation extends Model
         'anc_record_id',
         'midwife_id',
         'notes',
-        'locked_at'
+        'locked_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'locked_at' => 'datetime'
+            'locked_at' => 'datetime',
         ];
     }
 
@@ -38,10 +38,11 @@ class AncValidation extends Model
             'anc_record_id' => $record->id,
             'midwife_id' => $midwife->id,
             'notes' => $notes,
-            'locked_at' => now()
+            'locked_at' => now(),
         ]);
 
         $record->update(['is_locked' => true]);
+
         return $validation;
     }
 }

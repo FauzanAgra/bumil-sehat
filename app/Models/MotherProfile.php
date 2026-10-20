@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MotherProfile extends Model
 {
-    use SoftDeletes, HasNIKEncryption;
+    use HasNIKEncryption, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -32,7 +32,7 @@ class MotherProfile extends Model
     protected function casts(): array
     {
         return [
-            'birth_date' => 'date'
+            'birth_date' => 'date',
         ];
     }
 
@@ -76,6 +76,7 @@ class MotherProfile extends Model
     public function scopeByNik(Builder $query, string $nik): Builder
     {
         $hash = app(NIKService::class)->hashNIK($nik);
+
         return $query->where('nik_hash', $hash);
     }
 

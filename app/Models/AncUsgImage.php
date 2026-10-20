@@ -10,7 +10,7 @@ class AncUsgImage extends Model
     protected $fillable = [
         'anc_record_id',
         'image_url',
-        'uploaded_by'
+        'uploaded_by',
     ];
 
     // Relationship
@@ -27,6 +27,6 @@ class AncUsgImage extends Model
     // Helper
     public function getUrlAttribute(): string
     {
-        return asset('storage/' . $this->image_url);
+        return asset('storage/'.$this->image_url);
     }
 }

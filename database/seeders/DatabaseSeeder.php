@@ -17,11 +17,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name'        => 'Admin BumilSehat',
-            'email'       => 'admin@bumilsehat.com',
-            'phone'       => '08000000000',
-            'password'    => Hash::make('password'),
-            'role'        => 'admin',
+            'name' => 'Admin BumilSehat',
+            'email' => 'admin@bumilsehat.com',
+            'phone' => '08000000000',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
             'is_verified' => true,
         ]);
 

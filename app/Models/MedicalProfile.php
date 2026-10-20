@@ -17,7 +17,7 @@ class MedicalProfile extends Model
         'degree_prefix',
         'degree_suffix',
         'phone',
-        'availability'
+        'availability',
     ];
 
     // Relation
@@ -38,6 +38,7 @@ class MedicalProfile extends Model
         $prefix = $this->degree_prefix ? "{$this->degree_prefix}" : '';
 
         $suffix = $this->degree_suffix ? ", {$this->degree_suffix}" : '';
+
         return "{$prefix}{$this->user->name}{$suffix}";
     }
 

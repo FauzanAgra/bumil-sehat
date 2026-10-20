@@ -24,8 +24,7 @@ class MotherProfilesTable
                 TextColumn::make('nik_masked')
                     ->label('NIK')
                     ->getStateUsing(
-                        fn($record) =>
-                        app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
+                        fn ($record) => app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
                     )
                     ->fontFamily('mono'),
 
@@ -42,7 +41,7 @@ class MotherProfilesTable
                     ->label('RW')
                     ->badge()
                     ->color('gray')
-                    ->formatStateUsing(fn($state) => 'RW ' . $state),
+                    ->formatStateUsing(fn ($state) => 'RW '.$state),
 
                 TextColumn::make('assignedMidwife.name')
                     ->label('Bidan Pendamping')
@@ -52,15 +51,15 @@ class MotherProfilesTable
                 TextColumn::make('activePregnancy.status')
                     ->label('Status Kehamilan')
                     ->badge()
-                    ->color(fn(?string $state) => match ($state) {
-                        'active'    => 'success',
+                    ->color(fn (?string $state) => match ($state) {
+                        'active' => 'success',
                         'completed' => 'gray',
-                        default     => 'gray',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn(?string $state) => match ($state) {
-                        'active'    => 'Aktif',
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'active' => 'Aktif',
                         'completed' => 'Selesai',
-                        default     => 'Tidak Ada',
+                        default => 'Tidak Ada',
                     }),
 
                 TextColumn::make('created_at')

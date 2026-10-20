@@ -29,8 +29,8 @@ class Article extends Model
     {
         return [
             'published_at' => 'datetime',
-            'min_week'     => 'integer',
-            'max_week'     => 'integer',
+            'min_week' => 'integer',
+            'max_week' => 'integer',
         ];
     }
 
@@ -71,7 +71,7 @@ class Article extends Model
     public function publish(User $admin): void
     {
         $this->update([
-            'status'       => 'published',
+            'status' => 'published',
             'published_by' => $admin->id,
             'published_at' => now(),
         ]);
@@ -84,7 +84,7 @@ class Article extends Model
 
     public function getThumbnailUrlAttribute(): ?string
     {
-        return $this->thumbnail ? asset('storage/' . $this->thumbnail) : null;
+        return $this->thumbnail ? asset('storage/'.$this->thumbnail) : null;
     }
 
     public function getWeekRangeLabelAttribute(): string
@@ -95,6 +95,7 @@ class Article extends Model
         if ($this->min_week && $this->max_week) {
             return "Minggu {$this->min_week}–{$this->max_week}";
         }
+
         return $this->min_week
             ? "Mulai minggu {$this->min_week}"
             : "Hingga minggu {$this->max_week}";

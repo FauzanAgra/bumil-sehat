@@ -30,13 +30,13 @@ class DashboardController extends Controller
         // ── Hitung status per ibu (dari collection, tidak N+1)
         $riskCount = $mothers->filter(function ($m) {
             return $m->ancRecords->contains(
-                fn($r) => $r->detectedConditions->where('status', 'confirmed')->isNotEmpty()
+                fn ($r) => $r->detectedConditions->where('status', 'confirmed')->isNotEmpty()
             );
         })->count();
 
         $pendingCount = $mothers->filter(function ($m) {
             return $m->ancRecords->contains(
-                fn($r) => !$r->is_locked && !$r->validation
+                fn ($r) => ! $r->is_locked && ! $r->validation
             );
         })->count();
 
@@ -62,7 +62,7 @@ class DashboardController extends Controller
         // ── Ibu dengan kondisi risiko (confirmed/detected) — tampil di dashboard
         $riskMothers = $mothers->filter(function ($m) {
             return $m->ancRecords->contains(
-                fn($r) => $r->detectedConditions
+                fn ($r) => $r->detectedConditions
                     ->whereIn('status', ['confirmed', 'detected'])
                     ->isNotEmpty()
             );

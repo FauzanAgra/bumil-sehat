@@ -56,7 +56,7 @@ class ArticleForm
                         Select::make('status')
                             ->label('Status')
                             ->options([
-                                'draft'     => 'Draft',
+                                'draft' => 'Draft',
                                 'published' => 'Published',
                             ])
                             ->default('draft')

@@ -7,7 +7,6 @@ use App\Filament\Resources\NikAuditLogs\Tables\NikAuditLogsTable;
 use App\Models\NikAuditLog;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
@@ -20,8 +19,11 @@ class NikAuditLogResource extends Resource
     protected static ?string $recordTitleAttribute = 'id';
 
     protected static ?string $navigationLabel = 'Audit Log NIK';
+
     protected static ?string $pluralModelLabel = 'Audit Log NIK';
+
     protected static ?string $modelLabel = 'Audit Log NIK';
+
     protected static ?int $navigationSort = 1;
 
     public static function getNavigationGroup(): ?string
@@ -51,10 +53,12 @@ class NikAuditLogResource extends Resource
     {
         return false;
     }
+
     public static function canEdit($record): bool
     {
         return false;
     }
+
     public static function canDelete($record): bool
     {
         return false;

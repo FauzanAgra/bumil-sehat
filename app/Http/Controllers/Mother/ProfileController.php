@@ -15,7 +15,7 @@ class ProfileController extends Controller
     // ── Setting / Profil ──────────────────────────────────────────────
     public function setting()
     {
-        $user          = auth()->user();
+        $user = auth()->user();
         $motherProfile = $user->motherProfile;
 
         return view('dashboard.mother.setting', compact('user', 'motherProfile'));
@@ -24,10 +24,10 @@ class ProfileController extends Controller
     // ── Edit Profil ───────────────────────────────────────────────────
     public function edit()
     {
-        $user          = auth()->user();
+        $user = auth()->user();
         $motherProfile = $user->motherProfile;
-        $subdistricts  = Subdistrict::orderBy('name')->get();
-        $areas         = Area::with('subdistrict')->orderBy('rw_number')->get();
+        $subdistricts = Subdistrict::orderBy('name')->get();
+        $areas = Area::with('subdistrict')->orderBy('rw_number')->get();
 
         return view('dashboard.mother.edit-profile', compact(
             'user',
@@ -39,18 +39,18 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        $user          = auth()->user();
+        $user = auth()->user();
         $motherProfile = $user->motherProfile;
 
         $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'phone'          => ['required', 'string', 'unique:users,phone,' . $user->id],
-            'email'          => ['nullable', 'email', 'unique:users,email,' . $user->id],
-            'birth_date'     => ['required', 'date', 'before:today'],
-            'address'        => ['required', 'string'],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'unique:users,phone,'.$user->id],
+            'email' => ['nullable', 'email', 'unique:users,email,'.$user->id],
+            'birth_date' => ['required', 'date', 'before:today'],
+            'address' => ['required', 'string'],
             'subdistrict_id' => ['required', 'exists:subdistricts,id'],
-            'area_id'        => ['required', 'exists:areas,id'],
-            'rt'             => ['nullable', 'string', 'max:10'],
+            'area_id' => ['required', 'exists:areas,id'],
+            'rt' => ['nullable', 'string', 'max:10'],
         ], [
             'phone.unique' => 'Nomor HP sudah digunakan akun lain.',
             'email.unique' => 'Email sudah digunakan akun lain.',
@@ -58,7 +58,7 @@ class ProfileController extends Controller
 
         // Update user
         $user->update([
-            'name'  => $request->name,
+            'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
         ]);
@@ -68,11 +68,11 @@ class ProfileController extends Controller
 
         // Update mother profile
         $motherProfile->update([
-            'birth_date'     => $request->birth_date,
-            'address'        => $request->address,
+            'birth_date' => $request->birth_date,
+            'address' => $request->address,
             'subdistrict_id' => $request->subdistrict_id,
-            'area_id'        => $request->area_id,
-            'rt'             => $request->rt,
+            'area_id' => $request->area_id,
+            'rt' => $request->rt,
         ]);
 
         // Kalau wilayah berubah, reassign bidan
@@ -94,14 +94,15 @@ class ProfileController extends Controller
     public function changePassword()
     {
         $user = auth()->user();
+
         return view('dashboard.mother.change-password', compact('user'));
     }
 
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'old_password'          => ['required'],
-            'password'              => ['required', 'confirmed', Password::min(6)],
+            'old_password' => ['required'],
+            'password' => ['required', 'confirmed', Password::min(6)],
         ], [
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);

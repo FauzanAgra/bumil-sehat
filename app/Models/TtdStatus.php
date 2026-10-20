@@ -18,7 +18,7 @@ class TtdStatus extends Model
     protected function casts(): array
     {
         return [
-            'is_active'  => 'boolean',
+            'is_active' => 'boolean',
             'started_at' => 'datetime',
         ];
     }
@@ -64,8 +64,8 @@ class TtdStatus extends Model
     public function activate(string $activatedBy = 'system'): void
     {
         $this->update([
-            'is_active'    => true,
-            'started_at'   => now(),
+            'is_active' => true,
+            'started_at' => now(),
             'activated_by' => $activatedBy,
         ]);
     }

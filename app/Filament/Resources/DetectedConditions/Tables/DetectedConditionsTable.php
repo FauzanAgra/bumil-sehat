@@ -22,34 +22,34 @@ class DetectedConditionsTable
                     ->label('ANC ke-')
                     ->badge()
                     ->color('info')
-                    ->formatStateUsing(fn($state) => 'ANC ' . $state),
+                    ->formatStateUsing(fn ($state) => 'ANC '.$state),
 
                 TextColumn::make('condition_type')
                     ->label('Kondisi')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'kek'          => 'warning',
+                    ->color(fn (string $state) => match ($state) {
+                        'kek' => 'warning',
                         'preeclampsia' => 'danger',
-                        'anemia'       => 'rose',
+                        'anemia' => 'rose',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'kek'          => 'KEK',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'kek' => 'KEK',
                         'preeclampsia' => 'Preeklampsia',
-                        'anemia'       => 'Anemia',
+                        'anemia' => 'Anemia',
                     }),
 
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'detected'  => 'warning',
+                    ->color(fn (string $state) => match ($state) {
+                        'detected' => 'warning',
                         'confirmed' => 'danger',
-                        'rejected'  => 'success',
+                        'rejected' => 'success',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'detected'  => 'Terdeteksi',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'detected' => 'Terdeteksi',
                         'confirmed' => 'Dikonfirmasi',
-                        'rejected'  => 'Ditolak',
+                        'rejected' => 'Ditolak',
                     }),
 
                 TextColumn::make('validatedBy.name')
@@ -71,17 +71,17 @@ class DetectedConditionsTable
                 SelectFilter::make('condition_type')
                     ->label('Kondisi')
                     ->options([
-                        'kek'          => 'KEK',
+                        'kek' => 'KEK',
                         'preeclampsia' => 'Preeklampsia',
-                        'anemia'       => 'Anemia',
+                        'anemia' => 'Anemia',
                     ]),
 
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'detected'  => 'Terdeteksi',
+                        'detected' => 'Terdeteksi',
                         'confirmed' => 'Dikonfirmasi',
-                        'rejected'  => 'Ditolak',
+                        'rejected' => 'Ditolak',
                     ]),
             ]);
     }

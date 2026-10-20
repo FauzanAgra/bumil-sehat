@@ -20,21 +20,21 @@ use Illuminate\Support\Facades\Route;
 
 // ── Guest ─────────────────────────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
-    Route::get('/', fn() => redirect()->route('login'));
+    Route::get('/', fn () => redirect()->route('login'));
 
-    Route::get('/login',  [LoginController::class, 'show'])->name('login');
+    Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
 
     Route::get('/register', [RegisterController::class, 'chooseRole'])->name('register');
 
-    Route::get('/register/mother',          [RegisterController::class, 'showMother'])->name('register.mother');
-    Route::post('/register/mother',         [RegisterController::class, 'storeMother'])->name('register.mother.store');
+    Route::get('/register/mother', [RegisterController::class, 'showMother'])->name('register.mother');
+    Route::post('/register/mother', [RegisterController::class, 'storeMother'])->name('register.mother.store');
     Route::get('/register/mother/identity', [RegisterController::class, 'showIdentity'])->name('register.mother.identity');
     Route::post('/register/mother/identity', [RegisterController::class, 'storeIdentity'])->name('register.mother.identity.store');
-    Route::get('/register/mother/hpht',     [RegisterController::class, 'showHpht'])->name('register.mother.hpht');
-    Route::post('/register/mother/hpht',    [RegisterController::class, 'storeHpht'])->name('register.mother.hpht.store');
+    Route::get('/register/mother/hpht', [RegisterController::class, 'showHpht'])->name('register.mother.hpht');
+    Route::post('/register/mother/hpht', [RegisterController::class, 'storeHpht'])->name('register.mother.hpht.store');
 
-    Route::get('/register/medical',  [RegisterController::class, 'showMedical'])->name('register.medical');
+    Route::get('/register/medical', [RegisterController::class, 'showMedical'])->name('register.medical');
     Route::post('/register/medical', [RegisterController::class, 'storeMedical'])->name('register.medical.store');
 });
 
@@ -42,7 +42,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 // ── Waiting Approval — semua role terverifikasi butuh ini ─────────────────────
-Route::get('/waiting-approval', fn() => view('auth.waiting-approval'))->name('waiting-approval')->middleware('auth');
+Route::get('/waiting-approval', fn () => view('auth.waiting-approval'))->name('waiting-approval')->middleware('auth');
 
 // ── MOTHER ────────────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->group(function () {
@@ -50,8 +50,8 @@ Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->g
     Route::get('/dashboard', [MotherDashboard::class, 'index'])->name('dashboard');
 
     Route::prefix('anc')->name('anc.')->controller(AncController::class)->group(function () {
-        Route::get('/history',         'history')->name('history');
-        Route::get('/{schedule}',      'detail')->name('detail');
+        Route::get('/history', 'history')->name('history');
+        Route::get('/{schedule}', 'detail')->name('detail');
         Route::get('/{schedule}/form', 'form')->name('form');
         Route::post('/{schedule}/form', 'store')->name('store');
     });
@@ -60,16 +60,16 @@ Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->g
 
     Route::get('/chat', ChatController::class)->name('chat');
 
-    Route::get('/articles',              [ArticleController::class, 'index'])->name('articles');
+    Route::get('/articles', [ArticleController::class, 'index'])->name('articles');
     Route::get('/articles/{article:slug}', [ArticleController::class, 'show'])->name('articles.show');
 
     // Profil
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/setting', 'setting')->name('setting');
         Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/edit',      'edit')->name('edit');
-            Route::post('/edit',     'update')->name('update');
-            Route::get('/password',  'changePassword')->name('password');
+            Route::get('/edit', 'edit')->name('edit');
+            Route::post('/edit', 'update')->name('update');
+            Route::get('/password', 'changePassword')->name('password');
             Route::post('/password', 'updatePassword')->name('password.update');
         });
     });
@@ -105,9 +105,9 @@ Route::middleware(['auth', 'role:midwife'])->prefix('midwife')->name('midwife.')
     Route::controller(MidwifeSetting::class)->group(function () {
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/setting', 'show')->name('setting');
-            Route::get('/edit',      'edit')->name('edit');
-            Route::post('/edit',     'update')->name('update');
-            Route::get('/password',  'changePassword')->name('password');
+            Route::get('/edit', 'edit')->name('edit');
+            Route::post('/edit', 'update')->name('update');
+            Route::get('/password', 'changePassword')->name('password');
             Route::post('/password', 'updatePassword')->name('password.update');
         });
     });
@@ -127,9 +127,9 @@ Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->name('doctor.')->g
     Route::controller(DoctorProfile::class)->name('profile.')->group(function () {
         Route::get('/setting', 'show')->name('setting');
         Route::prefix('profile')->group(function () {
-            Route::get('/edit',      'edit')->name('edit');
-            Route::post('/edit',     'update')->name('update');
-            Route::get('/password',  'changePassword')->name('password');
+            Route::get('/edit', 'edit')->name('edit');
+            Route::post('/edit', 'update')->name('update');
+            Route::get('/password', 'changePassword')->name('password');
             Route::post('/password', 'updatePassword')->name('password.update');
         });
     });

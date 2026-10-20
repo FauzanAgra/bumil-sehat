@@ -22,7 +22,7 @@ class Area extends Model
         return $this->hasMany(MidwifeArea::class);
     }
 
-    public  function activeMidwifeArea(): HasOne
+    public function activeMidwifeArea(): HasOne
     {
         return $this->hasOne(MidwifeArea::class)->where('is_active', true);
     }

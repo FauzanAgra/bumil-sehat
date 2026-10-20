@@ -12,14 +12,14 @@ class MidwifeArea extends Model
         'midwife_id',
         'area_id',
         'is_active',
-        'assigned_at'
+        'assigned_at',
     ];
 
     protected function casts()
     {
         return [
             'is_active' => 'boolean',
-            'assigned_at' => 'datetime'
+            'assigned_at' => 'datetime',
         ];
     }
 

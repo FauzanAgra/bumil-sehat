@@ -15,28 +15,28 @@ class DetectedCondition extends Model
         'notes',
         'detected_at',
         'validated_by',
-        'validated_at'
+        'validated_at',
     ];
 
     protected function casts(): array
     {
         return [
             'detected_at' => 'datetime',
-            'validated_at' => 'datetime'
+            'validated_at' => 'datetime',
         ];
     }
 
     // Label Condition for human-readable
     const CONDITION_LABELS = [
-        'kek'          => 'Kekurangan Energi Kronik (KEK)',
+        'kek' => 'Kekurangan Energi Kronik (KEK)',
         'preeclampsia' => 'Preeklampsia',
-        'anemia'       => 'Anemia',
+        'anemia' => 'Anemia',
     ];
 
     const STATUS_LABELS = [
-        'detected'  => 'Terdeteksi',
+        'detected' => 'Terdeteksi',
         'confirmed' => 'Dikonfirmasi',
-        'rejected'  => 'Ditolak',
+        'rejected' => 'Ditolak',
     ];
 
     // Relations
@@ -83,17 +83,17 @@ class DetectedCondition extends Model
             'status' => 'confirmed',
             'validated_by' => $midwife->id,
             'validated_at' => now(),
-            'notes' => $notes
+            'notes' => $notes,
         ]);
     }
 
     public function reject(User $midwife, ?string $notes = null): void
     {
         $this->update([
-            'status'       => 'rejected',
+            'status' => 'rejected',
             'validated_by' => $midwife->id,
             'validated_at' => now(),
-            'notes'        => $notes,
+            'notes' => $notes,
         ]);
     }
 }

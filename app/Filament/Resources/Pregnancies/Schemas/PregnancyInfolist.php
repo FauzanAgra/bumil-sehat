@@ -21,12 +21,12 @@ class PregnancyInfolist
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()
-                            ->color(fn(string $state) => match ($state) {
-                                'active'    => 'success',
+                            ->color(fn (string $state) => match ($state) {
+                                'active' => 'success',
                                 'completed' => 'gray',
                             })
-                            ->formatStateUsing(fn(string $state) => match ($state) {
-                                'active'    => 'Aktif',
+                            ->formatStateUsing(fn (string $state) => match ($state) {
+                                'active' => 'Aktif',
                                 'completed' => 'Selesai',
                             }),
 
@@ -40,11 +40,11 @@ class PregnancyInfolist
 
                         TextEntry::make('gestational_week')
                             ->label('Usia Kehamilan')
-                            ->getStateUsing(fn($record) => $record->gestational_week . ' minggu'),
+                            ->getStateUsing(fn ($record) => $record->gestational_week.' minggu'),
 
                         TextEntry::make('trimester')
                             ->label('Trimester')
-                            ->getStateUsing(fn($record) => 'Trimester ' . $record->trimester),
+                            ->getStateUsing(fn ($record) => 'Trimester '.$record->trimester),
                     ]),
 
                 Section::make('Progress ANC')
@@ -52,7 +52,7 @@ class PregnancyInfolist
                     ->schema([
                         TextEntry::make('completed_anc_count')
                             ->label('ANC Selesai')
-                            ->getStateUsing(fn($record) => $record->completed_anc_count . ' dari 6'),
+                            ->getStateUsing(fn ($record) => $record->completed_anc_count.' dari 6'),
 
                         TextEntry::make('nextSchedule.schedule_date')
                             ->label('Jadwal ANC Berikutnya')

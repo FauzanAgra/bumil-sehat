@@ -14,7 +14,7 @@ class CreateMidwifeArea extends CreateRecord
     protected function beforeCreate(): void
     {
         $midwifeId = $this->data['midwife_id'];
-        $areaId    = $this->data['area_id'];
+        $areaId = $this->data['area_id'];
 
         // Cek apakah kombinasi bidan + area sudah ada
         $exists = MidwifeArea::where('midwife_id', $midwifeId)

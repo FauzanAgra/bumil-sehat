@@ -17,7 +17,7 @@ class NIKService
 
         if (empty($salt)) {
             throw new RuntimeException(
-                'NIK_HASH_SALT belum diset di .env. ' .
+                'NIK_HASH_SALT belum diset di .env. '.
                     'Generate dengan: php artisan tinker --execute="echo bin2hex(random_bytes(32));"'
             );
         }
@@ -30,16 +30,16 @@ class NIKService
      *
      * @throws InvalidNIKException
      */
-
     public function encrypt(string $nik): string
     {
         $this->validate($nik);
+
         return Crypt::encryptString($nik);
     }
 
     /**
      * Decrypt Ciphertext
-     * 
+     *
      * Kembalikan NIK plaintext dari ciphertext.
      * Jangan panggil langsung dari Controller — gunakan
      * MotherProfile::getDecryptedNik()
@@ -60,7 +60,7 @@ class NIKService
 
     /**
      * Hash NIK
-     * 
+     *
      * Buat HMAC-SHA256 dari NIK menggunakan salt dari .env.
      * One-way — tidak bisa dikembalikan ke NIK asli.
      * Dipakai untuk unique constraint dan pencarian di DB.
@@ -76,7 +76,7 @@ class NIKService
         return hash_hmac('sha256', $nik, $this->salt);
     }
 
-    // 
+    //
 
     /**
      * Masking NIK
@@ -93,17 +93,20 @@ class NIKService
     {
         if ($role === 'admin') {
             $nik = $this->resolvePlaintext($nikOrEncrypted);
+
             return $nik ?? str_repeat('*', 16);
         }
 
         if ($role === 'midwife') {
             $nik = $this->resolvePlaintext($nikOrEncrypted);
-            return $nik ? substr($nik, 0, 6) . str_repeat('*', 10) : str_repeat('*', 16);
+
+            return $nik ? substr($nik, 0, 6).str_repeat('*', 10) : str_repeat('*', 16);
         }
 
         if ($role === 'doctor') {
             $nik = $this->resolvePlaintext($nikOrEncrypted);
-            return $nik ? substr($nik, 0, 4) . str_repeat('*', 12) : str_repeat('*', 16);
+
+            return $nik ? substr($nik, 0, 4).str_repeat('*', 12) : str_repeat('*', 16);
         }
 
         return str_repeat('*', 16);

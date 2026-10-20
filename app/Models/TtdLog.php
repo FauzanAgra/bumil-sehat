@@ -17,7 +17,7 @@ class TtdLog extends Model
     protected function casts(): array
     {
         return [
-            'date'     => 'date',
+            'date' => 'date',
             'is_taken' => 'boolean',
         ];
     }

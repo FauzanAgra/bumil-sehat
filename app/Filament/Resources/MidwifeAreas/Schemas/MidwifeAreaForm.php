@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MidwifeAreas\Schemas;
 
+use App\Models\Area;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -28,10 +29,10 @@ class MidwifeAreaForm
                 Select::make('area_id')
                     ->label('Wilayah (RW)')
                     ->options(function () {
-                        return \App\Models\Area::with('subdistrict')
+                        return Area::with('subdistrict')
                             ->get()
-                            ->mapWithKeys(fn($area) => [
-                                $area->id => 'RW ' . $area->rw_number . ' — ' . $area->subdistrict->name
+                            ->mapWithKeys(fn ($area) => [
+                                $area->id => 'RW '.$area->rw_number.' — '.$area->subdistrict->name,
                             ]);
                     })
                     ->searchable()

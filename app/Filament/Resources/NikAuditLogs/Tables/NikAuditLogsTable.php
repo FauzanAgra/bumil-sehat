@@ -22,14 +22,14 @@ class NikAuditLogsTable
                 TextColumn::make('action')
                     ->label('Aksi')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'READ'    => 'info',
+                    ->color(fn (string $state) => match ($state) {
+                        'READ' => 'info',
                         'DECRYPT' => 'warning',
-                        'WRITE'   => 'success',
-                        'UPDATE'  => 'warning',
-                        'DELETE'  => 'danger',
-                        'FAILED'  => 'danger',
-                        default   => 'gray',
+                        'WRITE' => 'success',
+                        'UPDATE' => 'warning',
+                        'DELETE' => 'danger',
+                        'FAILED' => 'danger',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('actor.name')
@@ -40,21 +40,21 @@ class NikAuditLogsTable
                 TextColumn::make('actor_role')
                     ->label('Role')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
-                        'admin'   => 'danger',
+                    ->color(fn (string $state) => match ($state) {
+                        'admin' => 'danger',
                         'midwife' => 'rose',
-                        'doctor'  => 'info',
-                        'mother'  => 'success',
-                        'system'  => 'gray',
-                        default   => 'gray',
+                        'doctor' => 'info',
+                        'mother' => 'success',
+                        'system' => 'gray',
+                        default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'admin'   => 'Admin',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'admin' => 'Admin',
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
-                        'mother'  => 'Ibu Hamil',
-                        'system'  => 'Sistem',
-                        default   => $state,
+                        'doctor' => 'Dokter',
+                        'mother' => 'Ibu Hamil',
+                        'system' => 'Sistem',
+                        default => $state,
                     }),
 
                 TextColumn::make('ip_address')
@@ -77,22 +77,22 @@ class NikAuditLogsTable
                 SelectFilter::make('action')
                     ->label('Aksi')
                     ->options([
-                        'READ'    => 'READ',
+                        'READ' => 'READ',
                         'DECRYPT' => 'DECRYPT',
-                        'WRITE'   => 'WRITE',
-                        'UPDATE'  => 'UPDATE',
-                        'DELETE'  => 'DELETE',
-                        'FAILED'  => 'FAILED',
+                        'WRITE' => 'WRITE',
+                        'UPDATE' => 'UPDATE',
+                        'DELETE' => 'DELETE',
+                        'FAILED' => 'FAILED',
                     ]),
 
                 SelectFilter::make('actor_role')
                     ->label('Role')
                     ->options([
-                        'admin'   => 'Admin',
+                        'admin' => 'Admin',
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
-                        'mother'  => 'Ibu Hamil',
-                        'system'  => 'Sistem',
+                        'doctor' => 'Dokter',
+                        'mother' => 'Ibu Hamil',
+                        'system' => 'Sistem',
                     ]),
 
                 SelectFilter::make('is_anomaly')

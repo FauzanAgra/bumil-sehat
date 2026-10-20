@@ -11,7 +11,7 @@ class PatientController extends Controller
 {
     public function index(Request $request)
     {
-        $user   = Auth::user();
+        $user = Auth::user();
         $filter = $request->get('filter', 'semua');
         $search = $request->get('search');
 
@@ -44,14 +44,13 @@ class PatientController extends Controller
         $allMothers = (clone $query)->get()
             ->map(function ($m) {
                 $hasRisk = $m->ancRecords->contains(
-                    fn($r) =>
-                    $r->detectedConditions
+                    fn ($r) => $r->detectedConditions
                         ->whereIn('status', ['confirmed', 'detected'])
                         ->isNotEmpty()
                 );
 
                 $hasPending = $m->ancRecords->contains(
-                    fn($r) => ! $r->is_locked && ! $r->validation
+                    fn ($r) => ! $r->is_locked && ! $r->validation
                 );
 
                 $m->status_flag = $hasRisk
@@ -62,10 +61,10 @@ class PatientController extends Controller
             });
 
         $counts = [
-            'total'    => $allMothers->count(),
-            'risiko'   => $allMothers->where('status_flag', 'risiko')->count(),
+            'total' => $allMothers->count(),
+            'risiko' => $allMothers->where('status_flag', 'risiko')->count(),
             'validasi' => $allMothers->where('status_flag', 'validasi')->count(),
-            'normal'   => $allMothers->where('status_flag', 'normal')->count(),
+            'normal' => $allMothers->where('status_flag', 'normal')->count(),
         ];
 
         // Filter query sebelum pagination
@@ -90,14 +89,13 @@ class PatientController extends Controller
             ->through(function ($m) {
 
                 $hasRisk = $m->ancRecords->contains(
-                    fn($r) =>
-                    $r->detectedConditions
+                    fn ($r) => $r->detectedConditions
                         ->whereIn('status', ['confirmed', 'detected'])
                         ->isNotEmpty()
                 );
 
                 $hasPending = $m->ancRecords->contains(
-                    fn($r) => ! $r->is_locked && ! $r->validation
+                    fn ($r) => ! $r->is_locked && ! $r->validation
                 );
 
                 $m->status_flag = $hasRisk
@@ -106,8 +104,7 @@ class PatientController extends Controller
 
                 $m->active_conditions = $m->ancRecords
                     ->flatMap(
-                        fn($r) =>
-                        $r->detectedConditions
+                        fn ($r) => $r->detectedConditions
                             ->whereIn('status', ['confirmed', 'detected'])
                     )
                     ->unique('condition_type')
@@ -150,17 +147,18 @@ class PatientController extends Controller
         // Timeline ANC 1–6: isi slot kosong dengan null
         $ancTimeline = collect(range(1, 6))->map(function ($n) use ($pregnancy) {
             $schedule = $pregnancy?->ancSchedules->firstWhere('anc_number', $n);
+
             return [
-                'number'   => $n,
+                'number' => $n,
                 'schedule' => $schedule,
-                'record'   => $schedule?->ancRecord,
+                'record' => $schedule?->ancRecord,
             ];
         });
 
         // Kondisi aktif (confirmed / detected) dari semua ANC
         $activeConditions = collect();
         if ($pregnancy) {
-            $latestRecord = $pregnancy->ancSchedules->map(fn($s) => $s->ancRecord)->filter(fn($r) => $r && $r->validation)->sortByDesc('created_at')->first();
+            $latestRecord = $pregnancy->ancSchedules->map(fn ($s) => $s->ancRecord)->filter(fn ($r) => $r && $r->validation)->sortByDesc('created_at')->first();
             if ($latestRecord) {
                 $activeConditions = $latestRecord->detectedConditions->whereIn('status', ['confirmed', 'detected'])->values();
             }

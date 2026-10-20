@@ -28,13 +28,13 @@ class EnsureRole
         $user = Auth::user();
 
         // Cek role cocok
-        if (!in_array($user->role, $roles)) {
+        if (! in_array($user->role, $roles)) {
             return redirect($this->dashboardFor($user->role));
         }
 
         // Cek verifikasi untuk tenaga medis (midwife & doctor)
         // Mother tidak perlu verified untuk akses dashboard
-        if (in_array($user->role, ['midwife', 'doctor']) && !$user->is_verified) {
+        if (in_array($user->role, ['midwife', 'doctor']) && ! $user->is_verified) {
             return redirect()->route('waiting-approval');
         }
 
@@ -48,11 +48,11 @@ class EnsureRole
     private function dashboardFor(string $role): string
     {
         return match ($role) {
-            'mother'  => route('mother.dashboard'),
+            'mother' => route('mother.dashboard'),
             'midwife' => route('midwife.dashboard'),
-            'doctor'  => route('doctor.dashboard'),
-            'admin'   => '/admin', // atau url('/admin')
-            default   => route('login'),
+            'doctor' => route('doctor.dashboard'),
+            'admin' => '/admin', // atau url('/admin')
+            default => route('login'),
         };
     }
 }

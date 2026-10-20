@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use Filament\Tables\Columns\Layout\Panel;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -20,7 +21,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'role',
-        'is_verified'
+        'is_verified',
     ];
 
     protected $hidden = [
@@ -33,7 +34,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_verified' => 'boolean'
+            'is_verified' => 'boolean',
         ];
     }
 
@@ -78,14 +79,17 @@ class User extends Authenticatable
     {
         return $this->role === 'mother';
     }
+
     public function isMidwife(): bool
     {
         return $this->role === 'midwife';
     }
+
     public function isDoctor(): bool
     {
         return $this->role === 'doctor';
     }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

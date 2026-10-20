@@ -10,9 +10,9 @@ class ArticleController extends Controller
 {
     public function index(Request $request)
     {
-        $user      = auth()->user();
+        $user = auth()->user();
         $pregnancy = $user->motherProfile?->activePregnancy;
-        $week      = $pregnancy?->gestational_week;
+        $week = $pregnancy?->gestational_week;
 
         $query = Article::published();
 
@@ -23,7 +23,7 @@ class ArticleController extends Controller
 
         // Search
         if ($request->filled('q')) {
-            $query->where('title', 'like', '%' . $request->q . '%');
+            $query->where('title', 'like', '%'.$request->q.'%');
         }
 
         $articles = $query->latest('published_at')->paginate(6);
@@ -35,13 +35,13 @@ class ArticleController extends Controller
     {
         abort_if($article->status !== 'published', 404);
 
-        $user      = auth()->user();
+        $user = auth()->user();
         $pregnancy = $user->motherProfile?->activePregnancy;
-        $week      = $pregnancy?->gestational_week;
+        $week = $pregnancy?->gestational_week;
 
         // Artikel terkait — minggu kehamilan sama, bukan artikel ini
         $related = Article::published()
-            ->when($week, fn($q) => $q->forWeek($week))
+            ->when($week, fn ($q) => $q->forWeek($week))
             ->where('id', '!=', $article->id)
             ->take(2)
             ->get();

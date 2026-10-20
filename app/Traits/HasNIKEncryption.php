@@ -8,7 +8,6 @@ use Illuminate\Auth\AuthenticationException;
 
 trait HasNIKEncryption
 {
-
     public function setNikAttribute(string $nik): void
     {
         $service = app(NIKService::class);

@@ -24,18 +24,23 @@ class NikAuditLog extends Model
     protected function casts(): array
     {
         return [
-            'metadata'   => 'array',
+            'metadata' => 'array',
             'is_anomaly' => 'boolean',
             'created_at' => 'datetime',
         ];
     }
 
-    const ACTION_READ    = 'READ';
+    const ACTION_READ = 'READ';
+
     const ACTION_DECRYPT = 'DECRYPT';
-    const ACTION_WRITE   = 'WRITE';
-    const ACTION_UPDATE  = 'UPDATE';
-    const ACTION_DELETE  = 'DELETE';
-    const ACTION_FAILED  = 'FAILED';
+
+    const ACTION_WRITE = 'WRITE';
+
+    const ACTION_UPDATE = 'UPDATE';
+
+    const ACTION_DELETE = 'DELETE';
+
+    const ACTION_FAILED = 'FAILED';
 
     // Relations
     public function motherProfile(): BelongsTo
@@ -46,23 +51,23 @@ class NikAuditLog extends Model
     // Factory Method
 
     public static function record(
-        int    $motherProfileId,
+        int $motherProfileId,
         string $action,
-        array  $metadata   = [],
-        bool   $isAnomaly  = false,
+        array $metadata = [],
+        bool $isAnomaly = false,
     ): static {
         $user = auth()->user();
 
         return static::create([
             'mother_profile_id' => $motherProfileId,
-            'action'            => $action,
-            'actor_id'          => $user?->id,
-            'actor_role'        => $user?->role ?? 'system',
-            'ip_address'        => request()->ip() ?? '0.0.0.0',
-            'user_agent'        => request()->userAgent(),
-            'metadata'          => $metadata,
-            'is_anomaly'        => $isAnomaly,
-            'created_at'        => now(),
+            'action' => $action,
+            'actor_id' => $user?->id,
+            'actor_role' => $user?->role ?? 'system',
+            'ip_address' => request()->ip() ?? '0.0.0.0',
+            'user_agent' => request()->userAgent(),
+            'metadata' => $metadata,
+            'is_anomaly' => $isAnomaly,
+            'created_at' => now(),
         ]);
     }
 
@@ -70,11 +75,11 @@ class NikAuditLog extends Model
 
     protected static function booted(): void
     {
-        static::updating(fn() => throw new \LogicException(
+        static::updating(fn () => throw new \LogicException(
             'NikAuditLog bersifat immutable dan tidak dapat diubah.'
         ));
 
-        static::deleting(fn() => throw new \LogicException(
+        static::deleting(fn () => throw new \LogicException(
             'NikAuditLog tidak dapat dihapus sesuai ketentuan UU PDP.'
         ));
     }

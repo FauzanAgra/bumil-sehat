@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -35,10 +34,10 @@ class UserForm
                 Select::make('role')
                     ->label('Role')
                     ->options([
-                        'mother'  => 'Ibu Hamil',
+                        'mother' => 'Ibu Hamil',
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
-                        'admin'   => 'Admin',
+                        'doctor' => 'Dokter',
+                        'admin' => 'Admin',
                     ])
                     ->required()
                     ->native(false),
@@ -47,9 +46,9 @@ class UserForm
                     ->label('Password')
                     ->password()
                     ->revealable()
-                    ->required(fn(string $operation) => $operation === 'create')
-                    ->dehydrated(fn(?string $state) => filled($state))
-                    ->dehydrateStateUsing(fn(string $state) => bcrypt($state))
+                    ->required(fn (string $operation) => $operation === 'create')
+                    ->dehydrated(fn (?string $state) => filled($state))
+                    ->dehydrateStateUsing(fn (string $state) => bcrypt($state))
                     ->confirmed()
                     ->maxLength(255),
 
@@ -57,7 +56,7 @@ class UserForm
                     ->label('Konfirmasi Password')
                     ->password()
                     ->revealable()
-                    ->required(fn(string $operation) => $operation === 'create')
+                    ->required(fn (string $operation) => $operation === 'create')
                     ->dehydrated(false),
 
                 Toggle::make('is_verified')

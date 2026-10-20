@@ -30,7 +30,7 @@ class PatientController extends Controller
         // Search
         if ($request->filled('q')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->q . '%');
+                $q->where('name', 'like', '%'.$request->q.'%');
             });
         }
 
@@ -61,14 +61,13 @@ class PatientController extends Controller
         $allMothers = (clone $query)->get()->map(function ($m) {
 
             $hasRisk = $m->ancRecords->contains(
-                fn($r) =>
-                $r->detectedConditions
+                fn ($r) => $r->detectedConditions
                     ->where('status', 'detected')
                     ->isNotEmpty()
             );
 
             $hasPending = $m->ancRecords->contains(
-                fn($r) => ! $r->is_locked && ! $r->validation
+                fn ($r) => ! $r->is_locked && ! $r->validation
             );
 
             $m->status_flag = $hasRisk
@@ -79,24 +78,23 @@ class PatientController extends Controller
         });
 
         $stats = [
-            'total'    => $allMothers->count(),
-            'normal'   => $allMothers->where('status_flag', 'normal')->count(),
+            'total' => $allMothers->count(),
+            'normal' => $allMothers->where('status_flag', 'normal')->count(),
             'validasi' => $allMothers->where('status_flag', 'validasi')->count(),
-            'risiko'   => $allMothers->where('status_flag', 'risiko')->count(),
+            'risiko' => $allMothers->where('status_flag', 'risiko')->count(),
         ];
 
         // Pagination
         $mothers = $query->paginate(20)
             ->through(function ($m) {
                 $hasRisk = $m->ancRecords->contains(
-                    fn($r) =>
-                    $r->detectedConditions
+                    fn ($r) => $r->detectedConditions
                         ->where('status', 'detected')
                         ->isNotEmpty()
                 );
 
                 $hasPending = $m->ancRecords->contains(
-                    fn($r) => ! $r->is_locked && ! $r->validation
+                    fn ($r) => ! $r->is_locked && ! $r->validation
                 );
 
                 $m->status_flag = $hasRisk
@@ -105,15 +103,14 @@ class PatientController extends Controller
 
                 $m->conditions = $hasRisk
                     ? $m->ancRecords
-                    ->flatMap(
-                        fn($r) =>
-                        $r->detectedConditions
-                            ->where('status', 'detected')
-                    )
-                    ->pluck('condition_type')
-                    ->unique()
-                    ->values()
-                    ->toArray()
+                        ->flatMap(
+                            fn ($r) => $r->detectedConditions
+                                ->where('status', 'detected')
+                        )
+                        ->pluck('condition_type')
+                        ->unique()
+                        ->values()
+                        ->toArray()
                     : [];
 
                 return $m;
@@ -173,7 +170,7 @@ class PatientController extends Controller
                 ->values();
 
             $completedAnc = $pregnancy->ancSchedules
-                ->filter(fn($schedule) => $schedule->ancRecord?->is_locked)
+                ->filter(fn ($schedule) => $schedule->ancRecord?->is_locked)
                 ->count();
 
             $progressPercentage = round(($completedAnc / 6) * 100);
@@ -192,14 +189,14 @@ class PatientController extends Controller
                     ->isNotEmpty() ?? false;
 
                 $hasPending = $record &&
-                    !$record->is_locked &&
-                    !$record->validation;
+                    ! $record->is_locked &&
+                    ! $record->validation;
 
                 $isLocked = $record?->is_locked ?? false;
 
                 $isMissed = $schedule?->status === 'missed';
 
-                $isScheduled = $schedule && !$record && !$isMissed;
+                $isScheduled = $schedule && ! $record && ! $isMissed;
 
                 $timeline->push([
                     'anc_number' => $i,
@@ -288,7 +285,7 @@ class PatientController extends Controller
 
         $ttdStatus = $pregnancy->ttdStatus;
 
-        if (!$ttdStatus) {
+        if (! $ttdStatus) {
 
             $ttdStatus = TtdStatus::create([
                 'pregnancy_id' => $pregnancy->id,
@@ -299,8 +296,8 @@ class PatientController extends Controller
         } else {
 
             $ttdStatus->update([
-                'is_active' => !$ttdStatus->is_active,
-                'started_at' => !$ttdStatus->is_active
+                'is_active' => ! $ttdStatus->is_active,
+                'started_at' => ! $ttdStatus->is_active
                     ? now()
                     : $ttdStatus->started_at,
                 'activated_by' => 'midwife',

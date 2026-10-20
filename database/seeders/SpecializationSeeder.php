@@ -52,7 +52,7 @@ class SpecializationSeeder extends Seeder
                 'sort_order' => 4,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]
+            ],
         ]);
     }
 }

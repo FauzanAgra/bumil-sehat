@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\AncRecords\Pages;
 
 use App\Filament\Resources\AncRecords\AncRecordResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListAncRecords extends ListRecords

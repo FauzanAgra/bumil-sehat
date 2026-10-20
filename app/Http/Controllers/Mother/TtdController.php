@@ -12,10 +12,11 @@ class TtdController extends Controller
         $ttd = Auth::user()->motherProfile?->activePregnancy?->ttdStatus;
         if ($ttd?->is_active) {
             $ttd->logs()->updateOrCreate(
-                ['date'     => today()],
+                ['date' => today()],
                 ['is_taken' => true]
             );
         }
+
         return back();
     }
 }

@@ -48,9 +48,9 @@ class ArticleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListArticles::route('/'),
+            'index' => ListArticles::route('/'),
             'create' => CreateArticle::route('/create'),
-            'edit'   => EditArticle::route('/{record}/edit'),
+            'edit' => EditArticle::route('/{record}/edit'),
         ];
     }
 

@@ -24,7 +24,9 @@ class MotherProfileResource extends Resource
     protected static ?string $recordTitleAttribute = 'user.name';
 
     protected static ?string $navigationLabel = 'Ibu Hamil';
+
     protected static ?string $pluralModelLabel = 'Ibu Hamil';
+
     protected static ?string $modelLabel = 'Ibu Hamil';
 
     public static function getNavigationGroup(): ?string
@@ -54,7 +56,7 @@ class MotherProfileResource extends Resource
     {
         return [
             'index' => ListMotherProfiles::route('/'),
-            'view'  => ViewMotherProfile::route('/{record}'),
+            'view' => ViewMotherProfile::route('/{record}'),
         ];
     }
 
@@ -69,10 +71,12 @@ class MotherProfileResource extends Resource
     {
         return false;
     }
+
     public static function canEdit($record): bool
     {
         return false;
     }
+
     public static function canDelete($record): bool
     {
         return false;

@@ -27,18 +27,18 @@ class SpecializationsTable
                 TextColumn::make('role_group')
                     ->label('Grup')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
+                    ->color(fn (string $state) => match ($state) {
                         'midwife' => 'rose',
-                        'doctor'  => 'blue',
+                        'doctor' => 'blue',
                     })
-                    ->formatStateUsing(fn(string $state) => match ($state) {
+                    ->formatStateUsing(fn (string $state) => match ($state) {
                         'midwife' => 'Bidan',
-                        'doctor'  => 'Dokter',
+                        'doctor' => 'Dokter',
                     }),
                 TextColumn::make('wa_greeting')
                     ->label('Pesan WA')
                     ->limit(40)
-                    ->tooltip(fn(string $state) => $state),
+                    ->tooltip(fn (string $state) => $state),
                 IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean(),
@@ -53,7 +53,7 @@ class SpecializationsTable
                     ->label('Group Role')
                     ->options([
                         'midwife' => 'Bidan',
-                        'doctor' => 'Dokter'
+                        'doctor' => 'Dokter',
                     ]),
 
                 SelectFilter::make('is_active')
@@ -61,7 +61,7 @@ class SpecializationsTable
                     ->options([
                         '1' => 'Aktif',
                         '0' => 'Tidak Aktif',
-                    ])
+                    ]),
             ])
             ->recordActions([
                 EditAction::make(),

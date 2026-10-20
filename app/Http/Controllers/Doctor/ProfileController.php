@@ -9,7 +9,6 @@ use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
-
     public function show()
     {
         $user = auth()->user()->load([
@@ -40,12 +39,12 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         $request->validate([
-            'name'  => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:100', 'unique:users,email,' . $user->id],
+            'name' => ['required', 'string', 'max:100'],
+            'email' => ['nullable', 'email', 'max:100', 'unique:users,email,'.$user->id],
         ]);
 
         $user->update([
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
         ]);
 
@@ -73,10 +72,10 @@ class ProfileController extends Controller
 
         $request->validate([
             'current_password' => ['required', 'string'],
-            'password'         => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors([
                 'current_password' => 'Password saat ini tidak sesuai.',
             ]);

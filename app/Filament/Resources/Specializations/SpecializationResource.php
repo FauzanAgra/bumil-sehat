@@ -19,6 +19,7 @@ class SpecializationResource extends Resource
     protected static ?string $model = Specialization::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
+
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static ?string $navigationLabel = 'Spesialisasi';

@@ -24,8 +24,11 @@ class PregnancyResource extends Resource
     protected static ?string $recordTitleAttribute = 'id';
 
     protected static ?string $navigationLabel = 'Kehamilan';
+
     protected static ?string $pluralModelLabel = 'Kehamilan';
+
     protected static ?string $modelLabel = 'Kehamilan';
+
     protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
@@ -52,7 +55,7 @@ class PregnancyResource extends Resource
     {
         return [
             'index' => ListPregnancies::route('/'),
-            'view'  => ViewPregnancy::route('/{record}'),
+            'view' => ViewPregnancy::route('/{record}'),
         ];
     }
 
@@ -66,10 +69,12 @@ class PregnancyResource extends Resource
     {
         return false;
     }
+
     public static function canEdit($record): bool
     {
         return false;
     }
+
     public static function canDelete($record): bool
     {
         return false;
