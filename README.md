@@ -12,7 +12,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Primary-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Octane](https://img.shields.io/badge/Octane-FrankenPHP-EF4444?style=flat-square)](https://laravel.com/docs/octane)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](#-lisensi)
+[![License](https://img.shields.io/badge/License-All_Rights_Reserved-e11d48?style=flat-square)](LICENSE)
 
 [Fitur](#-fitur-utama) · [Role](#-role-pengguna) · [Tech Stack](#-tech-stack) · [Instalasi](#-instalasi) · [Testing](#-pengujian--formatting) · [Dokumentasi](#-dokumentasi-blueprint)
 
@@ -85,8 +85,8 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/fauzanagra/bumilsehat.git
-cd bumilsehat
+git clone https://github.com/FauzanAgra/bumil-sehat.git
+cd bumil-sehat
 
 # 2. Install dependensi PHP & JavaScript
 composer install
@@ -247,6 +247,10 @@ Sebelum berkontribusi atau menjalankan asisten AI pada repositori ini, wajib mem
 
 ---
 
-## 📝 Lisensi
+## ©️ Hak Cipta & Lisensi
 
-Distributed under the MIT License.
+**BumilSehat** dirancang dan dikembangkan oleh **[Fauzan Agra](https://github.com/FauzanAgra)**.
+
+`Copyright (c) 2026 Fauzan Agra. All Rights Reserved.`
+
+Kode sumber pada repositori ini berstatus **All Rights Reserved (Proprietary)** dan hanya diperuntukkan untuk peninjauan portofolio/evaluasi teknis. Dilarang menyalin, mengunggah ulang (*re-upload*), memodifikasi, mendistribusikan, atau menerapkan aplikasi ini tanpa izin tertulis dari pemilik hak cipta. Lihat detail lengkap pada berkas [`LICENSE`](LICENSE).

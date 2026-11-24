@@ -1,10 +1,18 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "fauzanagra/bumil-sehat",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "BumilSehat — Aplikasi web pemantauan kehamilan (ANC 1-6, TTD, deteksi risiko, & perlindungan NIK UU PDP) berbasis Single-Puskesmas.",
+    "keywords": ["laravel", "filament", "bumil-sehat", "anc", "puskesmas", "maternal-health"],
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Fauzan Agra",
+            "email": "fauzanagra1@gmail.com",
+            "homepage": "https://github.com/FauzanAgra",
+            "role": "Creator & Lead Developer"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "filament/filament": "^5.0",
