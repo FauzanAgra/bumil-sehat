@@ -18,6 +18,9 @@ class Pregnancy extends Model
         'hpht_date',
         'hpl_date',
         'status',
+        'completed_at',
+        'completed_by',
+        'completion_note',
     ];
 
     protected function casts(): array
@@ -25,6 +28,7 @@ class Pregnancy extends Model
         return [
             'hpht_date' => 'date',
             'hpl_date' => 'date',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -52,16 +56,35 @@ class Pregnancy extends Model
             ->ofMany('schedule_date', 'min');
     }
 
+    public function completedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by')->withTrashed();
+    }
+
+    public function recommendations(): HasMany
+    {
+        return $this->hasMany(DoctorRecommendation::class)->latest();
+    }
+
     // Scopes
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');
     }
 
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->where('status', 'completed');
+    }
+
     // Helper
     public function getGestationalWeekAttribute(): int
     {
-        return (int) $this->hpht_date->diffInWeeks(now());
+        $referenceDate = ($this->status === 'completed' && $this->completed_at !== null)
+            ? $this->completed_at
+            : now();
+
+        return (int) max(0, floor($this->hpht_date->diffInWeeks($referenceDate)));
     }
 
     public function getTrimesterAttribute(): int
@@ -87,5 +110,28 @@ class Pregnancy extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    public function complete(User $midwife, ?string $note = null): void
+    {
+        $cleanNote = $note !== null && trim($note) !== '' ? trim($note) : null;
+
+        $this->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+            'completed_by' => $midwife->id,
+            'completion_note' => $cleanNote,
+        ]);
+
+        $this->ttdStatus()
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+
+        $this->unsetRelation('ttdStatus');
     }
 }

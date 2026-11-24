@@ -142,9 +142,25 @@ class PatientController extends Controller
             'activePregnancy.ancSchedules.ancRecord.detectedConditions',
             'activePregnancy.ancSchedules.ancRecord.validation',
             'activePregnancy.ttdStatus.logs',
+            'activePregnancy.recommendations.doctor.medicalProfile.specialization',
+            'activePregnancy.recommendations.ancRecord.schedule',
         ]);
 
         $pregnancy = $motherProfile->activePregnancy;
+        $recommendations = $pregnancy?->recommendations ?? collect();
+
+        $completedPregnancies = $motherProfile->pregnancies()
+            ->completed()
+            ->with(['completedBy', 'ancSchedules.ancRecord', 'ttdStatus'])
+            ->latest('completed_at')
+            ->get();
+
+        if ($pregnancy) {
+            $pregnancy->setRelation('mother', $motherProfile);
+            foreach ($pregnancy->ancSchedules as $ancSchedule) {
+                $ancSchedule->setRelation('pregnancy', $pregnancy);
+            }
+        }
 
         $activeConditions = collect();
 
@@ -275,6 +291,8 @@ class PatientController extends Controller
             'ttdTarget',
             'ttdPercentage',
             'ttdStartedWeek',
+            'recommendations',
+            'completedPregnancies',
         ));
     }
 
@@ -287,6 +305,12 @@ class PatientController extends Controller
 
         $ttdStatus = DB::transaction(function () use ($pregnancy): TtdStatus {
             $lockedPregnancy = Pregnancy::lockForUpdate()->findOrFail($pregnancy->id);
+
+            abort_if(
+                ! $lockedPregnancy->isActive(),
+                422,
+                'Kehamilan sudah selesai sehingga status TTD tidak dapat diubah.'
+            );
 
             $ttdStatus = TtdStatus::where('pregnancy_id', $lockedPregnancy->id)
                 ->lockForUpdate()

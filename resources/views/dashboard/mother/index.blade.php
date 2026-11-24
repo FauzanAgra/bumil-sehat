@@ -23,6 +23,67 @@
     {{-- MAIN CONTENT --}}
     <main class="flex-1 overflow-y-auto px-6 pb-28 space-y-6">
 
+        @if (session('success'))
+            <div class="bg-green-50 border border-green-200 text-green-700 text-xs rounded-2xl px-4 py-3 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-green-500"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl px-4 py-3 space-y-1">
+                <p class="font-bold"><i class="fa-solid fa-circle-exclamation mr-1"></i> Periksa kembali input Bunda:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- PENGINGAT JADWAL ANC H-1 / HARI-H --}}
+        @if ($nextSchedule && $nextSchedule->isReminderDue())
+            @php
+                $isScheduleToday = $nextSchedule->schedule_date->isToday();
+                $reminderActionRoute = $isScheduleToday
+                    ? route('mother.anc.form', $nextSchedule->id)
+                    : route('mother.anc.detail', $nextSchedule->id);
+            @endphp
+            <div
+                class="rounded-3xl p-4 border shadow-sm flex items-start gap-3 {{ $isScheduleToday ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200' }}">
+                <div
+                    class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 {{ $isScheduleToday ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600' }}">
+                    <i class="fa-solid fa-bell text-sm"></i>
+                </div>
+                <div class="flex-1 space-y-1.5">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full {{ $isScheduleToday ? 'bg-amber-200/70 text-amber-800' : 'bg-blue-200/70 text-blue-800' }}">
+                            {{ $nextSchedule->reminder_label }}
+                        </span>
+                    </div>
+                    <p class="text-xs font-bold text-gray-800">
+                        Jadwal ANC ke-{{ $nextSchedule->anc_number }}
+                        @if ($nextSchedule->schedule_time)
+                            · {{ \Carbon\Carbon::parse($nextSchedule->schedule_time)->format('H:i') }} WIB
+                        @endif
+                    </p>
+                    <p class="text-[11px] text-gray-600 leading-relaxed">
+                        @if ($isScheduleToday)
+                            Hari ini jadwal pemeriksaan Bunda{{ $nextSchedule->note ? ' (' . $nextSchedule->note . ')' : '' }}. Jangan lupa bawa buku KIA ya!
+                        @else
+                            Besok jadwal pemeriksaan Bunda{{ $nextSchedule->note ? ' (' . $nextSchedule->note . ')' : '' }}. Siapkan buku KIA dari sekarang ya, Bunda.
+                        @endif
+                    </p>
+                    <a href="{{ $reminderActionRoute }}"
+                        class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl transition {{ $isScheduleToday ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-blue-600 text-white hover:bg-blue-700' }}">
+                        {{ $isScheduleToday ? 'Isi Data ANC Sekarang' : 'Lihat Detail Jadwal' }}
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
+
         {{-- 1. Kartu Usia Janin --}}
         @if ($pregnancy)
             <div
@@ -45,9 +106,58 @@
                 </div>
             </div>
         @else
-            <div class="bg-rose-50 border border-rose-200 rounded-[2.5rem] p-7 text-center">
-                <p class="text-rose-500 font-semibold">Belum ada data kehamilan aktif.</p>
+            <div class="bg-rose-50 border border-rose-200 rounded-[2rem] p-6 space-y-4">
+                <div class="text-center space-y-1">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-500 flex items-center justify-center mx-auto">
+                        <i class="fa-solid fa-heart text-lg"></i>
+                    </div>
+                    <p class="text-sm text-rose-700 font-bold">Belum Ada Kehamilan Aktif</p>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        Jika Bunda sedang memulai kehamilan baru, masukkan tanggal HPHT di bawah ini agar pemantauan ANC
+                        otomatis dimulai.
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ route('mother.pregnancies.store') }}" class="space-y-3">
+                    @csrf
+                    <div class="space-y-1">
+                        <label for="mother_hpht_date" class="text-xs font-bold text-gray-600 px-1">
+                            Tanggal HPHT (Hari Pertama Haid Terakhir)
+                        </label>
+                        <input type="date" id="mother_hpht_date" name="hpht_date"
+                            max="{{ now()->subDay()->toDateString() }}" value="{{ old('hpht_date') }}" required
+                            class="w-full px-4 py-3 rounded-2xl bg-white border border-rose-200 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-300">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-3.5 rounded-2xl shadow-md shadow-rose-200 transition">
+                        Mulai Kehamilan Baru
+                    </button>
+                </form>
             </div>
+
+            @if ($completedPregnancies->isNotEmpty())
+                <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-3">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Riwayat Kehamilan Sebelumnya</p>
+                    @foreach ($completedPregnancies as $past)
+                        <div class="bg-gray-50 rounded-2xl p-3.5 space-y-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-xs font-bold text-gray-700">
+                                    Selesai {{ $past->completed_at?->translatedFormat('d M Y') ?? '—' }}
+                                </p>
+                                <span class="text-[10px] font-semibold bg-white text-gray-600 px-2.5 py-0.5 rounded-full border border-gray-200">
+                                    {{ $past->gestational_week }} Minggu
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-gray-500">
+                                HPHT {{ $past->hpht_date->translatedFormat('d M Y') }} · ANC {{ $past->completed_anc_count }}/6 selesai
+                            </p>
+                            @if ($past->completion_note)
+                                <p class="text-[11px] text-gray-600 pt-1">{{ $past->completion_note }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         @endif
 
         {{-- Alert kondisi risiko --}}
@@ -64,6 +174,51 @@
                     </p>
                 </div>
             </div>
+        @endif
+
+        {{-- Catatan Rekomendasi Dokter / Nakes --}}
+        @if ($pregnancy && $recommendations->isNotEmpty())
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h4 class="text-sm font-bold text-gray-700">Catatan dari Dokter / Nakes</h4>
+                    <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full">
+                        {{ $recommendations->count() }} terbaru
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    @foreach ($recommendations as $rec)
+                        <div class="bg-white border border-blue-100 rounded-3xl p-4 shadow-sm space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-user-doctor text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">{{ $rec->doctor_display_name }}</p>
+                                        <p class="text-[10px] text-gray-400">
+                                            {{ $rec->doctor_specialization }}
+                                            @if ($rec->ancRecord?->schedule)
+                                                · ANC ke-{{ $rec->ancRecord->schedule->anc_number }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                                <span
+                                    class="text-[9px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap {{ $rec->level_badge_class }}">
+                                    {{ $rec->level_label }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-relaxed bg-blue-50/50 rounded-2xl p-3">
+                                {{ $rec->recommendation }}
+                            </p>
+                            <p class="text-[10px] text-gray-400 text-right">
+                                {{ $rec->created_at->translatedFormat('d M Y, H:i') }}
+                            </p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
         @endif
 
         {{-- 2. Bidan Pendamping --}}

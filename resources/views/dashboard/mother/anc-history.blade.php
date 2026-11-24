@@ -228,6 +228,9 @@
             </section>
         @endif
 
+        {{-- GRAFIK TREN KLINIS ANC 1-6 --}}
+        <x-anc-trend-charts :schedules="$schedules" theme="rose" title="Perkembangan Kesehatan Bunda" />
+
         {{-- DIVIDER RIWAYAT SELESAI --}}
         @php
             $doneOrMissed = $schedules->whereIn('status', ['done', 'missed'])->sortByDesc('anc_number');

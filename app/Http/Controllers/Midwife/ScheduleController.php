@@ -15,10 +15,11 @@ class ScheduleController extends Controller
         $filter = $request->get('filter', 'today');
 
         $query = AncSchedule::whereHas('pregnancy', function ($q) use ($user) {
-            $q->whereHas(
-                'mother',
-                fn ($q2) => $q2->where('assigned_midwife_id', $user->id)
-            );
+            $q->where('status', 'active')
+                ->whereHas(
+                    'mother',
+                    fn ($q2) => $q2->where('assigned_midwife_id', $user->id)
+                );
         })->where('status', '!=', 'missed')
             ->with(['pregnancy.mother.user', 'ancRecord.detectedConditions']);
 

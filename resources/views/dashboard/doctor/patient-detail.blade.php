@@ -12,7 +12,7 @@
         </a>
         <div class="text-right">
             <h1 class="text-base font-bold text-gray-700">Detail Pasien</h1>
-            <p class="text-xs text-gray-400">Data bersifat read-only</p>
+            <p class="text-xs text-gray-400">Supervisi ANC & catatan rekomendasi</p>
         </div>
     </header>
 
@@ -24,6 +24,17 @@
                 class="bg-green-50 border border-green-200 text-green-700 text-xs rounded-2xl px-4 py-3 flex items-center gap-2">
                 <i class="fa-solid fa-circle-check text-green-500"></i>
                 {{ session('success') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl px-4 py-3 space-y-1">
+                <p class="font-bold"><i class="fa-solid fa-circle-exclamation mr-1"></i> Periksa kembali input rekomendasi:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
@@ -58,9 +69,10 @@
 
         {{-- BADGE READ-ONLY --}}
         <div class="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-            <i class="fa-solid fa-lock text-blue-400 shrink-0"></i>
+            <i class="fa-solid fa-stethoscope text-blue-500 shrink-0"></i>
             <p class="text-xs text-blue-700 leading-relaxed">
-                Data ini <strong>hanya dapat dibaca</strong>. Validasi dan penguncian dilakukan oleh Bidan pendamping.
+                Data pengukuran ANC bersifat <strong>read-only</strong> (validasi & penguncian oleh Bidan pendamping).
+                Anda dapat menambahkan <strong>catatan rekomendasi tindak lanjut</strong> di bawah.
             </p>
         </div>
 
@@ -143,6 +155,9 @@
 
                 </div>
             </section>
+
+            {{-- GRAFIK TREN KLINIS ANC 1-6 --}}
+            <x-anc-trend-charts :schedules="$pregnancy->ancSchedules" theme="blue" />
         @endif
 
         {{-- RIWAYAT ANC --}}
@@ -384,6 +399,112 @@
                     </div>
                 @endforeach
 
+            </div>
+        </section>
+
+        {{-- CATATAN REKOMENDASI DOKTER --}}
+        <section class="space-y-4">
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-sm font-bold text-gray-700">Catatan Rekomendasi Dokter</h3>
+                @if ($recommendations->isNotEmpty())
+                    <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full">
+                        {{ $recommendations->count() }} catatan
+                    </span>
+                @endif
+            </div>
+
+            {{-- Form Tulis Rekomendasi --}}
+            <form method="POST" action="{{ route('doctor.patients.recommendations.store', $motherProfile->id) }}"
+                class="bg-white border border-blue-100 rounded-3xl p-5 shadow-sm space-y-4">
+                @csrf
+
+                <div class="space-y-1.5">
+                    <label for="follow_up_level" class="text-xs font-bold text-gray-600 px-1">
+                        Tingkat Tindak Lanjut
+                    </label>
+                    <select id="follow_up_level" name="follow_up_level" required
+                        class="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        <option value="routine" @selected(old('follow_up_level', 'routine') === 'routine')>
+                            Kontrol Rutin
+                        </option>
+                        <option value="monitor" @selected(old('follow_up_level') === 'monitor')>
+                            Perlu Pemantauan
+                        </option>
+                        <option value="refer" @selected(old('follow_up_level') === 'refer')>
+                            Rujukan Faskes Lanjutan
+                        </option>
+                    </select>
+                </div>
+
+                @if ($ancRecordsForSelect->isNotEmpty())
+                    <div class="space-y-1.5">
+                        <label for="anc_record_id" class="text-xs font-bold text-gray-600 px-1">
+                            Tautkan ke Kunjungan ANC (Opsional)
+                        </label>
+                        <select id="anc_record_id" name="anc_record_id"
+                            class="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                            <option value="">Umum (seluruh kehamilan)</option>
+                            @foreach ($ancRecordsForSelect as $sched)
+                                <option value="{{ $sched->ancRecord->id }}" @selected((string) old('anc_record_id') === (string) $sched->ancRecord->id)>
+                                    ANC ke-{{ $sched->anc_number }} —
+                                    {{ $sched->schedule_date->translatedFormat('d M Y') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <div class="space-y-1.5">
+                    <label for="recommendation" class="text-xs font-bold text-gray-600 px-1">
+                        Isi Catatan Rekomendasi
+                    </label>
+                    <textarea id="recommendation" name="recommendation" rows="3" required minlength="5" maxlength="1000"
+                        placeholder="Tulis saran tindak lanjut, nutrisi, pemantauan tekanan darah/Hb, atau indikasi rujukan untuk Bidan & Ibu..."
+                        class="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300">{{ old('recommendation') }}</textarea>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                    Simpan & Kirim Rekomendasi
+                </button>
+            </form>
+
+            {{-- Riwayat Rekomendasi --}}
+            <div class="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-3">
+                @forelse ($recommendations as $rec)
+                    <div class="space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">{{ $rec->doctor_display_name }}</p>
+                                <p class="text-[10px] text-gray-400">
+                                    {{ $rec->doctor_specialization }}
+                                    @if ($rec->ancRecord?->schedule)
+                                        · ANC ke-{{ $rec->ancRecord->schedule->anc_number }}
+                                    @endif
+                                    · {{ $rec->created_at->translatedFormat('d M Y, H:i') }}
+                                </p>
+                            </div>
+                            <span
+                                class="text-[9px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap {{ $rec->level_badge_class }}">
+                                {{ $rec->level_label }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-2xl p-3">
+                            {{ $rec->recommendation }}
+                        </p>
+                    </div>
+                    @unless ($loop->last)
+                        <div class="h-px bg-gray-100"></div>
+                    @endunless
+                @empty
+                    <div class="text-center py-3">
+                        <p class="text-xs font-semibold text-gray-400">Belum ada catatan rekomendasi</p>
+                        <p class="text-[10px] text-gray-300 mt-0.5">
+                            Rekomendasi yang Anda tulis akan langsung tampil pada layar Bidan pendamping dan Ibu Hamil.
+                        </p>
+                    </div>
+                @endforelse
             </div>
         </section>
     </main>

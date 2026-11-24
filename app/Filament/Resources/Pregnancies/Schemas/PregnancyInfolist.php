@@ -59,6 +59,25 @@ class PregnancyInfolist
                             ->date('d M Y')
                             ->placeholder('Tidak ada jadwal'),
                     ]),
+
+                Section::make('Informasi Penutupan Kehamilan')
+                    ->columns(2)
+                    ->visible(fn ($record) => $record->status === 'completed')
+                    ->schema([
+                        TextEntry::make('completed_at')
+                            ->label('Tanggal Selesai')
+                            ->dateTime('d M Y, H:i')
+                            ->placeholder('—'),
+
+                        TextEntry::make('completedBy.name')
+                            ->label('Ditutup Oleh')
+                            ->placeholder('—'),
+
+                        TextEntry::make('completion_note')
+                            ->label('Catatan Penutupan')
+                            ->columnSpanFull()
+                            ->placeholder('Tidak ada catatan'),
+                    ]),
             ]);
     }
 }

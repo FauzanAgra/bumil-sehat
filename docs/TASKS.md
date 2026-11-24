@@ -4,9 +4,9 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 
 ## Progress Overview
 
-- **Status Progress**: 43 / 43 Completed (100%)
-- **Total Tasks**: 43
-- **Completed (`[x]`)**: 43
+- **Status Progress**: 55 / 55 Completed (100%)
+- **Total Tasks**: 55
+- **Completed (`[x]`)**: 55
 - **In Progress (`[~]`)**: 0
 - **Blocked (`[!]`)**: 0
 - **Pending (`[ ]`)**: 0
@@ -113,3 +113,49 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 | [x] | `W2-020` | Tambahkan Feature Tests: Isolasi `/admin`, matriks role `EnsureRole`, redirect admin/nakes, & keamanan registrasi (`SEC-002`, `SEC-003`, `SEC-008`, `SEC-009`, `SEC-014`) | High | `W2-003`, `W2-006`, `W2-013`, `W2-014`, `W2-015`, `W2-018` | Semua skenario otorisasi panel/role & integritas registrasi terverifikasi otomatis | 2026-11-24 |
 | [x] | `W2-021` | Tambahkan Feature Tests: IDOR lintas role, penjadwalan & `missed` ANC, jadwal eligible (`SEC-005`), USG wajib ANC 1 & 5 (`SEC-012`), audit NIK (`SEC-007`), & XSS artikel (`SEC-RISK-002`) | High | `W2-008`, `W2-009`, `W2-012`, `W2-017`, `W2-018` | Seluruh skenario IDOR, validasi ANC, audit log NIK, dan sanitasi artikel lulus uji | 2026-11-24 |
 | [x] | `W2-022` | Tambahkan Feature Tests: Validasi & penguncian ANC, konkurensi simpan vs lock (`SEC-004`), Auto-TTD (`< 10w`, `>= 10w`, historis `SEC-006`/`SEC-010`), toggle TTD (`SEC-011`), & profil Bidan (`W2-002`) | High | `W2-002`, `W2-007`, `W2-010`, `W2-011`, `W2-018` | Seluruh alur validasi, penguncian permanen, dan TTD lulus uji tanpa regresi (`45 passed, 238 assertions`) | 2026-11-24 |
+
+---
+
+## Wave 3 — Clinical Continuity & Maternal Engagement
+
+### Module: Blueprint Synchronization
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-001` | Sinkronisasi Blueprint Wave 3 (`docs/PRD.md`, `docs/ERD.md`, `docs/TECH_SPEC.md`, `docs/TASKS.md`) | High | `W2-022` | Seluruh FR/US/AC, 18 tabel ERD, rute, & task board Wave 3 selaras dengan rencana yang disetujui | 2026-11-24 |
+
+### Module: Pregnancy Lifecycle (`active` → `completed` & New Pregnancy)
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-002` | Migrasi kolom penutupan `pregnancies` (`completed_at`, `completed_by`, `completion_note`) & pembaruan model `Pregnancy` | High | `W3-001` | Migrasi kompatibel PostgreSQL/SQLite; `gestational_week` berhenti di `completed_at`; `complete()` menonaktifkan TTD aktif (`FR-026`) | 2026-11-24 |
+| [x] | `W3-003` | Controller, rute, & UI penutupan kehamilan (Bidan) serta mulai kehamilan baru HPHT (Bidan, Ibu, & Filament `PregnancyInfolist`) | High | `W3-002` | Otorisasi Bidan pendamping (`403` untuk Bidan lain), anti-dobel kehamilan aktif (`422` + `lockForUpdate`), & riwayat selesai tampil read-only (`AC-011`) | 2026-11-24 |
+
+### Module: Doctor Recommendations (`doctor_recommendations`)
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-004` | Migrasi tabel `doctor_recommendations`, model `DoctorRecommendation`, & `StoreDoctorRecommendationRequest` | High | `W3-001` | Skema kompatibel PostgreSQL/SQLite; validasi role Dokter verified & konsistensi `anc_record_id` milik kehamilan aktif pasien (`FR-027`) | 2026-11-24 |
+| [x] | `W3-005` | Controller, rute, & UI catatan rekomendasi Dokter (form Dokter, tampilan detail Bidan, & kartu ramah Dashboard Ibu) | High | `W3-004` | Dokter dapat menulis rekomendasi `routine`/`monitor`/`refer`; terbaca di layar Dokter, Bidan pendamping, dan Dashboard Ibu (`AC-012`) | 2026-11-24 |
+
+### Module: ANC 1–6 Clinical Trend Charts
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-006` | Buat pratinjau perbandingan visual HTML (**Inline SVG vs Chart.js**) untuk persetujuan pemilihan teknologi grafik | High | `W3-001` | Halaman perbandingan menampilkan 4 metrik ANC 1–6 (BB, TD `140/90`, Hb `11.0`, LILA `23.5`) dalam container `max-w-md` sesuai `docs/DESIGN.md`; pengguna memilih **Chart.js v4** | 2026-11-24 |
+| [x] | `W3-007` | Implementasikan komponen Blade `<x-anc-trend-charts>` terpilih pada detail Bidan, detail Dokter, & Riwayat ANC Ibu | High | `W3-006` | 4 metrik klinis + garis batas risiko + empty state tampil bersih via Chart.js v4 lazy-loaded & lolos `npm run build` (`FR-028`, `AC-013`) | 2026-11-24 |
+
+### Module: H-1 & Today ANC Reminders
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-008` | Tambahkan helper `isReminderDue()`, `reminder_label`, & `buildWhatsAppReminderUrl()` pada model `AncSchedule` | Medium | `W3-001` | Akurat membedakan jadwal Hari-H, Besok (H-1), & jadwal jauh; deep-link `wa.me/62...` terformat aman (`FR-029`) | 2026-11-24 |
+| [x] | `W3-009` | Tambahkan banner pengingat H-1/Hari-H di Dashboard Ibu & tombol 1-klik **"Ingatkan via WA"** di Jadwal & Detail Pasien Bidan | Medium | `W3-008` | Banner otomatis tampil saat jadwal jatuh hari ini/besok; tombol WA tampil terpisah dari link utama kartu jadwal (`AC-014`) | 2026-11-24 |
+
+### Module: Automated Tests & Wave 3 Verification
+
+| Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
+| :-: | --- | --- | --- | --- | --- | :-: |
+| [x] | `W3-010` | Tambahkan Feature Tests `PregnancyLifecycleTest` (penutupan, freeze minggu, auto-off TTD, IDOR Bidan, anti-dobel kehamilan baru) | High | `W3-003` | Seluruh skenario `AC-011` lulus otomatis di PHPUnit | 2026-11-24 |
+| [x] | `W3-011` | Tambahkan Feature Tests `DoctorRecommendationTest` (simpan, validasi silang `anc_record_id`, otorisasi role, visibilitas 3 peran) | High | `W3-005` | Seluruh skenario `AC-012` lulus otomatis di PHPUnit | 2026-11-24 |
+| [x] | `W3-012` | Tambahkan Feature Tests `AncTrendAndReminderTest` & jalankan verifikasi penuh (`pint`, `composer test`, `npm run build`) | High | `W3-007`, `W3-009` | Seluruh skenario `AC-013` & `AC-014` lulus beserta seluruh suite lama tanpa regresi (`60 passed, 385 assertions`) | 2026-11-24 |

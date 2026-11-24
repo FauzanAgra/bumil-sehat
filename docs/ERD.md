@@ -9,8 +9,8 @@
 | **Primary DBMS (Dev & Prod)** | PostgreSQL (sesuai [ADR-0001](./adr/0001-database-selection.md)) |
 | **Testing DBMS** | SQLite In-Memory (`:memory:` via `phpunit.xml`) |
 | **ORM & Migration Tool** | Laravel 12 Eloquent ORM & Schema Builder |
-| **Total Migrasi** | 19 file migrasi di `database/migrations/` |
-| **Total Tabel Domain** | 17 tabel bisnis utama |
+| **Total Migrasi** | 21 file migrasi di `database/migrations/` |
+| **Total Tabel Domain** | 18 tabel bisnis utama |
 | **Total Tabel Sistem Laravel** | 7 tabel infrastruktur (`password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`) |
 | **Sinkronisasi** | 100% diverifikasi terhadap migrasi aktual di `database/migrations/` |
 
@@ -40,6 +40,8 @@ erDiagram
     USERS ||--o{ ANC_USG_IMAGES : "uploads usg"
     USERS ||--o{ DETECTED_CONDITIONS : "validates condition"
     USERS ||--o{ ANC_VALIDATIONS : "locks validation"
+    USERS ||--o{ PREGNANCIES : "completes pregnancy"
+    USERS ||--o{ DOCTOR_RECOMMENDATIONS : "writes recommendation"
     USERS ||--o{ ARTICLES : "creates article"
     USERS ||--o{ ARTICLES : "publishes article"
     USERS ||--o{ NIK_AUDIT_LOGS : "acts as actor"
@@ -57,11 +59,13 @@ erDiagram
 
     PREGNANCIES ||--o{ ANC_SCHEDULES : "has schedules 1-6"
     PREGNANCIES ||--o| TTD_STATUSES : "has ttd status"
+    PREGNANCIES ||--o{ DOCTOR_RECOMMENDATIONS : "receives recommendation"
 
     ANC_SCHEDULES ||--o| ANC_RECORDS : "fulfilled by"
     ANC_RECORDS ||--o| ANC_USG_IMAGES : "attaches usg"
     ANC_RECORDS ||--o{ DETECTED_CONDITIONS : "triggers risk"
     ANC_RECORDS ||--o| ANC_VALIDATIONS : "validated by"
+    ANC_RECORDS ||--o{ DOCTOR_RECOMMENDATIONS : "optionally referenced by"
 
     TTD_STATUSES ||--o{ TTD_LOGS : "tracks daily intake"
 
@@ -154,6 +158,9 @@ erDiagram
         date hpht_date
         date hpl_date
         enum status
+        timestamp completed_at
+        bigint completed_by FK
+        text completion_note
         timestamp deleted_at
         timestamp created_at
         timestamp updated_at
@@ -274,6 +281,17 @@ erDiagram
         boolean is_anomaly
         timestamp created_at
     }
+
+    DOCTOR_RECOMMENDATIONS {
+        bigint id PK
+        bigint pregnancy_id FK
+        bigint anc_record_id FK
+        bigint doctor_id FK
+        enum follow_up_level
+        text recommendation
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ---
@@ -289,7 +307,7 @@ erDiagram
 | 5 | `specializations` | Master Medis | ❌ | `App\Models\Specialization` | Master jenis tenaga medis & grup otorisasinya (`midwife`/`doctor`) |
 | 6 | `medical_profiles` | Profil Nakes | ✅ | `App\Models\MedicalProfile` | STR/SIP, gelar, nomor konsultasi, dan jadwal ketersediaan nakes |
 | 7 | `midwife_areas` | Mapping Wilayah | ❌ | `App\Models\MidwifeArea` | Penugasan Bidan ke area RW binaan |
-| 8 | `pregnancies` | Klinis Kehamilan | ✅ | `App\Models\Pregnancy` | Siklus kehamilan (HPHT, HPL, status aktif/selesai) |
+| 8 | `pregnancies` | Klinis Kehamilan | ✅ | `App\Models\Pregnancy` | Siklus kehamilan (HPHT, HPL, status aktif/selesai, & metadata penutupan) |
 | 9 | `anc_schedules` | Klinis ANC | ✅ | `App\Models\AncSchedule` | Jadwal pertemuan ANC ke-1 s.d. ke-6 |
 | 10 | `anc_records` | Klinis ANC | ✅ | `App\Models\AncRecord` | Data antropometri, vital sign, lab, janin, dan flag penguncian |
 | 11 | `anc_usg_images` | Klinis ANC | ❌ | `App\Models\AncUsgImage` | Bukti foto USG terkait catatan ANC (1:1) |
@@ -299,6 +317,7 @@ erDiagram
 | 15 | `ttd_logs` | Suplementasi | ❌ | `App\Models\TtdLog` | Catatan harian konsumsi TTD per tanggal |
 | 16 | `articles` | Edukasi CMS | ✅ | `App\Models\Article` | Artikel edukasi kehamilan dengan filter rentang minggu |
 | 17 | `nik_audit_logs` | Keamanan UU PDP | ❌ (Immutable) | `App\Models\NikAuditLog` | Audit log permanen setiap akses/dekripsi/kegagalan akses NIK |
+| 18 | `doctor_recommendations` | Kolaborasi Klinis | ❌ | `App\Models\DoctorRecommendation` | Catatan rekomendasi tindak lanjut dari Dokter untuk kehamilan pasien |
 
 ---
 
@@ -402,7 +421,7 @@ erDiagram
 | `created_at` / `updated_at` | `TIMESTAMP` | Yes | - | - | Audit timestamp |
 
 ### 5.8 `pregnancies`
-*Migrasi: `2026_04_22_021333_create_pregnancies_table.php`*
+*Migrasi: `2026_04_22_021333_create_pregnancies_table.php`, `2026_11_24_100000_add_completion_fields_to_pregnancies_table.php`*
 
 | Column | Type | Nullable | Key | Default / Constraint | Description |
 | --- | --- | :-: | --- | --- | --- |
@@ -411,6 +430,9 @@ erDiagram
 | `hpht_date` | `DATE` | No | - | - | Hari Pertama Haid Terakhir |
 | `hpl_date` | `DATE` | No | - | - | Hari Perkiraan Lahir (`HPHT + 280 hari`) |
 | `status` | `ENUM` | No | - | `'active' \| 'completed'`, default `'active'` | Status siklus kehamilan |
+| `completed_at` | `TIMESTAMP` | Yes | - | `NULL` | Waktu penutupan siklus kehamilan (juga membekukan `gestational_week`) |
+| `completed_by` | `BIGINT UNSIGNED` | Yes | FK | `→ users.id` (`SET NULL`) | Bidan pendamping yang menutup kehamilan |
+| `completion_note` | `TEXT` | Yes | - | `NULL` | Catatan penutupan opsional (mis. persalinan normal/SC) |
 | `deleted_at` | `TIMESTAMP` | Yes | - | SoftDeletes | Waktu soft delete |
 | `created_at` / `updated_at` | `TIMESTAMP` | Yes | - | - | Audit timestamp |
 
@@ -549,7 +571,20 @@ erDiagram
 | `is_anomaly` | `BOOLEAN` | No | IDX | `false` (`true` untuk `FAILED`) | Penanda akses mencurigakan / tidak berwenang |
 | `created_at` | `TIMESTAMP` | No | IDX | `CURRENT_TIMESTAMP` | Waktu kejadian (immutable, tanpa `updated_at`) |
 
-### 5.18 Tabel Sistem Laravel
+### 5.18 `doctor_recommendations`
+*Migrasi: `2026_11_24_100100_create_doctor_recommendations_table.php`*
+
+| Column | Type | Nullable | Key | Default / Constraint | Description |
+| --- | --- | :-: | --- | --- | --- |
+| `id` | `BIGINT UNSIGNED` | No | PK | Auto-increment | Primary identifier |
+| `pregnancy_id` | `BIGINT UNSIGNED` | No | FK, IDX | `→ pregnancies.id` (`CASCADE`) | Kehamilan tujuan rekomendasi |
+| `anc_record_id` | `BIGINT UNSIGNED` | Yes | FK | `→ anc_records.id` (`SET NULL`) | Referensi opsional ke kunjungan ANC spesifik pada kehamilan yang sama |
+| `doctor_id` | `BIGINT UNSIGNED` | No | FK | `→ users.id` (`RESTRICT`) | Akun Dokter/Nakes penulis rekomendasi |
+| `follow_up_level` | `ENUM` | No | - | `'routine' \| 'monitor' \| 'refer'`, default `'routine'` | Tingkat prioritas tindak lanjut klinis |
+| `recommendation` | `TEXT` | No | - | - | Isi catatan rekomendasi medis untuk Bidan & Ibu |
+| `created_at` / `updated_at` | `TIMESTAMP` | Yes | IDX | Composite `INDEX (pregnancy_id, created_at)` | Audit timestamp & urutan terbaru |
+
+### 5.19 Tabel Sistem Laravel
 - `password_reset_tokens` (`email` PK, `token`, `created_at`) — `0001_01_01_000000`
 - `sessions` (`id` PK, `user_id` IDX, `ip_address`, `user_agent`, `payload`, `last_activity` IDX) — `0001_01_01_000000`
 - `cache` & `cache_locks` — `0001_01_01_000001`
@@ -564,6 +599,7 @@ erDiagram
 3. **Alur Klinis ANC (`1:N` → `1:1`)**: `MotherProfile` dapat memiliki riwayat `Pregnancy` (dengan 1 `activePregnancy`). Setiap `Pregnancy` memiliki maksimal 6 `AncSchedule` (`anc_number` 1–6). Setiap jadwal diisi tepat 1 `AncRecord`, yang dapat memiliki 1 `AncUsgImage`, 0–3 `DetectedCondition` (`kek`, `preeclampsia`, `anemia`), dan tepat 1 `AncValidation`.
 4. **Suplementasi TTD (`1:1` → `1:N`)**: Setiap `Pregnancy` memiliki paling banyak 1 `TtdStatus`, yang menyimpan banyak catatan harian `TtdLog` (unik per tanggal).
 5. **Spesialisasi Extensible (`1:N`)**: Menambah profesi baru (mis. *Guru Yoga* atau *Konselor Laktasi*) cukup menambahkan baris pada `specializations` melalui Filament Admin tanpa mengubah skema database maupun kode frontend.
+6. **Kolaborasi Rekomendasi Dokter (`1:N`)**: Setiap `Pregnancy` dapat menerima banyak `DoctorRecommendation` yang ditulis oleh `User` ber-role `doctor` dan secara opsional menautkan satu `AncRecord` pada kehamilan yang sama. Rekomendasi ini terbaca oleh Dokter, Bidan pendamping, dan Ibu Hamil tanpa mengubah sifat *read-only* data klinis ANC di sisi Dokter.
 
 ---
 
@@ -581,6 +617,7 @@ erDiagram
 | `ttd_logs` | `UNIQUE (ttd_status_id, date)` | Cegah duplikasi pencatatan harian & lookup cepat range 5 hari / bulanan |
 | `articles` | `UNIQUE (slug)`, `INDEX (status, published_at)`, `INDEX (min_week, max_week)` | Route binding slug & query artikel terpublikasi sesuai minggu kehamilan |
 | `nik_audit_logs` | `INDEX (mother_profile_id)`, `INDEX (is_anomaly)`, `INDEX (mother_profile_id, created_at)`, `INDEX (actor_id, created_at)`, `INDEX (action, created_at)` | Filtering & investigasi cepat pada panel audit admin |
+| `doctor_recommendations` | `INDEX (pregnancy_id, created_at)` | Pengambilan urutan rekomendasi terbaru per kehamilan pada layar Dokter, Bidan, & Ibu |
 
 > **Catatan Teknis Migrasi Existing (untuk diperhatikan saat refactoring skema di masa depan):**
 > 1. Pada `create_ttd_logs_table.php` baris 22, `$table->index('ttd_status_id', 'date')` membuat index bernama `'date'` pada kolom tunggal `ttd_status_id` (bukan composite); namun query `(ttd_status_id, date)` sudah ter-cover secara optimal oleh `UNIQUE (ttd_status_id, date)` pada baris 21.
@@ -592,9 +629,9 @@ erDiagram
 
 - **Uniqueness**: `users.phone`, `subdistricts.name`, `specializations.name`, `areas(subdistrict_id, rw_number)`, `mother_profiles.user_id`, `mother_profiles.nik_hash`, `medical_profiles.user_id`, `midwife_areas(midwife_id, area_id)`, `anc_schedules(pregnancy_id, anc_number)`, `anc_records.schedule_id`, `anc_usg_images.anc_record_id`, `detected_conditions(anc_record_id, condition_type)`, `anc_validations.anc_record_id`, `ttd_statuses.pregnancy_id`, `ttd_logs(ttd_status_id, date)`, `articles.slug`.
 - **Delete Semantics**:
-  - `RESTRICT` pada referensi klinis penting (`anc_records.schedule_id`, `anc_records.mother_id`, `anc_records.recorded_by`, `anc_validations.midwife_id`, `anc_schedules.created_by`, `mother_profiles.subdistrict_id`, `mother_profiles.area_id`, `medical_profiles.specialization_id`, `articles.created_by`) untuk mencegah penghapusan riwayat yang sedang dipakai.
-  - `SET NULL` pada referensi opsional (`mother_profiles.assigned_midwife_id`, `detected_conditions.validated_by`, `articles.published_by`, `nik_audit_logs.actor_id`).
-  - `CASCADE` pada dependensi anak langsung (`areas.subdistrict_id`, `mother_profiles.user_id`, `medical_profiles.user_id`, `pregnancies.mother_id`, `anc_schedules.pregnancy_id`, `anc_usg_images.anc_record_id`, `detected_conditions.anc_record_id`, `anc_validations.anc_record_id`, `ttd_statuses.pregnancy_id`, `ttd_logs.ttd_status_id`).
+  - `RESTRICT` pada referensi klinis penting (`anc_records.schedule_id`, `anc_records.mother_id`, `anc_records.recorded_by`, `anc_validations.midwife_id`, `anc_schedules.created_by`, `mother_profiles.subdistrict_id`, `mother_profiles.area_id`, `medical_profiles.specialization_id`, `articles.created_by`, `doctor_recommendations.doctor_id`) untuk mencegah penghapusan riwayat yang sedang dipakai.
+  - `SET NULL` pada referensi opsional (`mother_profiles.assigned_midwife_id`, `pregnancies.completed_by`, `detected_conditions.validated_by`, `doctor_recommendations.anc_record_id`, `articles.published_by`, `nik_audit_logs.actor_id`).
+  - `CASCADE` pada dependensi anak langsung (`areas.subdistrict_id`, `mother_profiles.user_id`, `medical_profiles.user_id`, `pregnancies.mother_id`, `anc_schedules.pregnancy_id`, `anc_usg_images.anc_record_id`, `detected_conditions.anc_record_id`, `anc_validations.anc_record_id`, `ttd_statuses.pregnancy_id`, `ttd_logs.ttd_status_id`, `doctor_recommendations.pregnancy_id`).
 
 ---
 
@@ -606,6 +643,8 @@ erDiagram
 4. **Finalitas Keputusan Bidan**: Pembaruan data ANC sebelum dikunci hanya mereset ulang kondisi berstatus `detected`; kondisi `confirmed` atau `rejected` tidak boleh ditimpa ulang.
 5. **Penargetan Kehamilan TTD (`SEC-006`)**: Aktivasi TTD otomatis dari validasi ANC wajib menargetkan kehamilan pemilik `ancRecord->schedule->pregnancy`, bukan sekadar `activePregnancy` terbaru secara terpisah.
 6. **Urutan Seeder Wajib**: `SpecializationSeeder` & `SubdistrictSeeder` harus berjalan sebelum `MedicalStaffSeeder`, lalu `MotherSeeder` di urutan terakhir (karena bergantung pada `areas`, `midwife_areas`, dan `NIK_HASH_SALT`).
+7. **Single Active Pregnancy & Pembekuan Penutupan (Wave 3)**: Setiap `MotherProfile` maksimal memiliki satu `Pregnancy` berstatus `active` (dijaga melalui `DB::transaction()` + `MotherProfile::lockForUpdate()`). Saat `completed`, `completed_at` wajib terisi, `ttd_statuses.is_active` dinonaktifkan, dan usia kehamilan dibekukan pada `completed_at`.
+8. **Konsistensi Relasi Rekomendasi Dokter (Wave 3)**: Bila `doctor_recommendations.anc_record_id` diisi, baris `AncRecord` terkait wajib berada pada jadwal milik `doctor_recommendations.pregnancy_id` yang sama.
 
 ---
 

@@ -99,17 +99,20 @@
                         $badgeText = 'Menunggu Input';
                         $link = route('midwife.patients.show', $schedule->pregnancy->mother_id);
                     }
+
+                    $waReminderUrl = ($schedule->isScheduled() && ! $record)
+                        ? $schedule->buildWhatsAppReminderUrl()
+                        : null;
                 @endphp
 
-                <a href="{{ $link }}"
-                    class="block bg-white rounded-3xl p-4 border {{ $borderClass }} shadow-sm hover:shadow-md transition active:scale-[0.98]">
-                    <div class="flex items-center gap-3">
+                <div class="bg-white rounded-3xl p-4 border {{ $borderClass }} shadow-sm hover:shadow-md transition">
+                    <a href="{{ $link }}" class="flex items-center gap-3 active:scale-[0.99] transition">
                         <div class="w-12 h-12 bg-rose-50 rounded-2xl flex flex-col items-center justify-center shrink-0">
                             <span class="text-[9px] text-rose-400 font-bold">ANC</span>
                             <span class="text-lg font-bold text-rose-500 leading-none">{{ $schedule->anc_number }}</span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-bold text-gray-800">
+                            <p class="text-sm font-bold text-gray-800 truncate">
                                 {{ $schedule->pregnancy->mother->user->name }}
                             </p>
                             <p class="text-xs text-gray-400 mt-0.5">
@@ -123,8 +126,28 @@
                             class="text-[10px] {{ $badgeClass }} font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
                             {{ $badgeText }}
                         </span>
-                    </div>
-                </a>
+                    </a>
+
+                    @if ($waReminderUrl)
+                        <div class="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between gap-2">
+                            @if ($schedule->reminder_label)
+                                <span
+                                    class="text-[10px] font-bold px-2.5 py-0.5 rounded-full {{ $schedule->schedule_date->isToday() ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700' }}">
+                                    <i class="fa-solid fa-bell text-[9px] mr-0.5"></i>
+                                    {{ $schedule->reminder_label }}
+                                </span>
+                            @else
+                                <span class="text-[10px] text-gray-400">Belum diinput Ibu</span>
+                            @endif
+
+                            <a href="{{ $waReminderUrl }}" target="_blank" rel="noopener noreferrer"
+                                class="inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                                Ingatkan via WA
+                            </a>
+                        </div>
+                    @endif
+                </div>
             @empty
                 <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-center space-y-4">
                     <div class="w-14 h-14 mx-auto bg-gray-50 rounded-2xl flex items-center justify-center">

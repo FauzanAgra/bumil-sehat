@@ -26,6 +26,7 @@ Aplikasi dijalankan di atas **Laravel Octane + FrankenPHP** dengan database utam
 | **CSS Framework** | Tailwind CSS + Typography Plugin | `^4.0.0` (`@tailwindcss/vite`) | Token di `resources/css/app.css` |
 | **Build Tool** | Vite + `laravel-vite-plugin` | `^7.0.7` / `^2.0.0` | Input tunggal: `resources/css/app.css` & `resources/js/app.js` |
 | **HTTP Client (JS)** | Axios | `^1.11.0` | Terpasang di `resources/js/bootstrap.js` |
+| **Charting (JS)** | Chart.js | `^4.6.2` | Grafik tren klinis ANC 1–6 (tree-shaken & lazy-loaded di `resources/js/anc-trend-charts.js`, disetujui Wave 3) |
 | **Code Formatting** | Laravel Pint | `^1.24` | `vendor/bin/pint` |
 | **Testing** | PHPUnit | `^11.5.50` | `composer test` / `php artisan test` |
 
@@ -81,28 +82,30 @@ bumil-sehat/
 │   │   ├── Controllers/
 │   │   │   ├── Auth/         # LoginController, RegisterController
 │   │   │   ├── Mother/       # Dashboard, Anc, Ttd, Chat, Article, Profile
-│   │   │   ├── Midwife/      # Dashboard, Patient, Schedule, Validation, Profile
+│   │   │   ├── Midwife/      # Dashboard, Patient, Pregnancy, Schedule, Validation, Profile
 │   │   │   └── Doctor/       # Dashboard, Patient, Profile
 │   │   ├── Middleware/       # EnsureRole, RedirectIfAuthenticated
-│   │   └── Requests/         # StoreAncValidationRequest (+ FormRequest tambahan Wave 2)
+│   │   └── Requests/         # StoreAncValidationRequest, StoreDoctorRecommendationRequest
 │   ├── Listeners/            # AutoActivateTtdOnValidation
-│   ├── Models/               # 17 Eloquent domain models
+│   ├── Models/               # 18 Eloquent domain models
 │   ├── Providers/            # AppServiceProvider, Filament/AdminPanelProvider
-│   ├── Services/             # NIKService (singleton)
+│   ├── Services/             # NIKService (singleton), HtmlSanitizerService
 │   └── Traits/               # HasNIKEncryption
 ├── bootstrap/
 │   ├── app.php               # Routing, middleware aliases (role, guest), redirectGuestsTo, trustProxies
 │   └── providers.php         # Service provider registry
-├── config/                   # Konfigurasi Laravel & Octane (config/octane.php)
+├── config/                   # Konfigurasi Laravel, Octane (config/octane.php), & TrustedProxy
 ├── database/
-│   ├── migrations/           # 19 migrasi database
+│   ├── migrations/           # 21 migrasi database
 │   └── seeders/              # DatabaseSeeder -> Specialization -> Subdistrict -> MedicalStaff -> Mother
 ├── docs/                     # Blueprint resmi: PRD, ERD, TECH_SPEC, TASKS, DESIGN, adr/
 ├── resources/
 │   ├── css/app.css           # Tailwind CSS v4 @theme tokens & custom utilities
-│   ├── js/app.js             # Entry point JS Vite
+│   ├── js/app.js             # Entry point JS Vite (lazy-load anc-trend-charts.js)
+│   ├── js/anc-trend-charts.js # Modul Chart.js v4 (BB, TD, Hb, LILA + garis ambang risiko)
 │   └── views/
 │       ├── auth/             # Login, choose-role, register-mother (3 step), register-medical, waiting-approval
+│       ├── components/       # Komponen Blade reusable (anc-trend-charts)
 │       ├── dashboard/        # mother/, midwife/, doctor/
 │       └── layouts/          # app, mother(+plain), midwife(+plain), doctor(+plain)
 ├── routes/web.php            # Seluruh web route terkelompok per role
@@ -135,7 +138,7 @@ bumil-sehat/
 
 ## 6. Frontend Architecture
 
-1. **Server-Side Rendering (Blade)**: Seluruh halaman publik dan dashboard role (`mother`, `midwife`, `doctor`) dirender di server menggunakan Blade dengan sedikit vanilla JS untuk interaksi ringan (toggle password, modal, konfirmasi fetch `PATCH toggle-ttd`).
+1. **Server-Side Rendering (Blade)**: Seluruh halaman publik dan dashboard role (`mother`, `midwife`, `doctor`) dirender di server menggunakan Blade dengan vanilla JS ringan untuk interaksi (toggle password, modal, konfirmasi fetch `PATCH toggle-ttd`) serta modul Chart.js v4 ter-code-split (`resources/js/anc-trend-charts.js`) yang dimuat otomatis hanya pada halaman yang menampilkan `<x-anc-trend-charts>`.
 2. **Tailwind CSS v4 via Vite**:
    - Sumber pemindaian kelas didefinisikan eksplisit melalui direktif `@source` di `resources/css/app.css`.
    - Plugin `@tailwindcss/typography` digunakan untuk merender konten HTML artikel edukasi.
@@ -156,9 +159,9 @@ Seluruh rute browser didefinisikan terpusat di `routes/web.php` (total 96 route 
 | --- | --- | --- |
 | Guest (`/`, `/login`, `/register/*`) | `guest` (+ `throttle:10,1` pada `POST /login`) | Login, pilih role, registrasi Ibu 3 step (`mother`, `identity`, `hpht`), registrasi medis |
 | Authenticated Umum | `auth` | `POST /logout`, `GET /waiting-approval` |
-| Mother (`/mother/*`) | `auth`, `role:mother` | `dashboard`, `anc/history`, `anc/{schedule}`, `anc/{schedule}/form` (GET/POST), `ttd/take` (POST), `chat`, `articles`, `articles/{article:slug}`, `setting`, `profile/edit`, `profile/password` |
-| Midwife (`/midwife/*`) | `auth`, `role:midwife` | `dashboard`, `patients`, `patients/{motherProfile}`, `schedules` (GET/POST/create), `schedules/{schedule}` (PUT), `schedules/{schedule}/missed` (PATCH), `schedules/missed-direct/{motherProfile}` (POST), `anc/{ancRecord}/validate` (GET/POST), `pregnancies/{pregnancy}/toggle-ttd` (PATCH JSON), `profile/{setting,edit,password}` |
-| Doctor (`/doctor/*`) | `auth`, `role:doctor` | `dashboard`, `patients`, `patients/{motherProfile}`, `setting`, `profile/{edit,password}` |
+| Mother (`/mother/*`) | `auth`, `role:mother` | `dashboard`, `pregnancies` (POST), `anc/history`, `anc/{schedule}`, `anc/{schedule}/form` (GET/POST), `ttd/take` (POST), `chat`, `articles`, `articles/{article:slug}`, `setting`, `profile/edit`, `profile/password` |
+| Midwife (`/midwife/*`) | `auth`, `role:midwife` | `dashboard`, `patients`, `patients/{motherProfile}`, `patients/{motherProfile}/pregnancies` (POST), `pregnancies/{pregnancy}/complete` (PATCH), `schedules` (GET/POST/create), `schedules/{schedule}` (PUT), `schedules/{schedule}/missed` (PATCH), `schedules/missed-direct/{motherProfile}` (POST), `anc/{ancRecord}/validate` (GET/POST), `pregnancies/{pregnancy}/toggle-ttd` (PATCH JSON), `profile/{setting,edit,password}` |
+| Doctor (`/doctor/*`) | `auth`, `role:doctor` | `dashboard`, `patients`, `patients/{motherProfile}`, `patients/{motherProfile}/recommendations` (POST), `setting`, `profile/{edit,password}` |
 | Admin (`/admin/*`) | Filament `Authenticate` + `FilamentUser` | Dashboard + 11 CRUD/View Resources |
 | Health Check | Public | `GET /up` |
 

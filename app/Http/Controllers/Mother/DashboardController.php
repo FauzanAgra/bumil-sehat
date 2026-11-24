@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Mother;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetectedCondition;
+use App\Models\MotherProfile;
+use App\Models\Pregnancy;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -58,13 +63,31 @@ class DashboardController extends Controller
             $takenToday = $ttdStatus->isTakenToday();
         }
 
-        // Kondisi risiko yang terdeteksi dan belum divalidasi
+        // Kondisi risiko yang terdeteksi dan belum divalidasi pada kehamilan aktif
         $pendingConditions = null;
         if ($pregnancy && $motherProfile) {
-            $pendingConditions = DetectedCondition::whereHas('ancRecord', function ($q) use ($motherProfile) {
-                $q->where('mother_id', $motherProfile->id);
+            $pendingConditions = DetectedCondition::whereHas('ancRecord.schedule', function ($q) use ($pregnancy) {
+                $q->where('pregnancy_id', $pregnancy->id);
             })->where('status', 'detected')->exists();
         }
+
+        // Rekomendasi Dokter terbaru (maks 3) pada kehamilan aktif
+        $recommendations = $pregnancy
+            ? $pregnancy->recommendations()
+                ->with(['doctor.medicalProfile.specialization', 'ancRecord.schedule'])
+                ->limit(3)
+                ->get()
+            : collect();
+
+        // Riwayat kehamilan selesai (jika ada)
+        $completedPregnancies = $motherProfile
+            ? $motherProfile->pregnancies()
+                ->completed()
+                ->with(['completedBy', 'ancSchedules'])
+                ->latest('completed_at')
+                ->limit(3)
+                ->get()
+            : collect();
 
         // Sapaan berdasarkan waktu
         $hour = now('Asia/Jakarta')->hour;
@@ -89,7 +112,46 @@ class DashboardController extends Controller
             'ttdLogs',
             'takenToday',
             'pendingConditions',
+            'recommendations',
+            'completedPregnancies',
             'greeting',
         ));
+    }
+
+    public function storePregnancy(Request $request): RedirectResponse
+    {
+        $motherProfile = $request->user()->motherProfile;
+        abort_if(! $motherProfile, 403);
+
+        $validated = $request->validate([
+            'hpht_date' => ['required', 'date', 'before:today'],
+        ], [
+            'hpht_date.required' => 'Tanggal HPHT wajib diisi.',
+            'hpht_date.date' => 'Format tanggal HPHT tidak valid.',
+            'hpht_date.before' => 'Tanggal HPHT harus sebelum hari ini.',
+        ]);
+
+        DB::transaction(function () use ($motherProfile, $validated): void {
+            $lockedMother = MotherProfile::lockForUpdate()->findOrFail($motherProfile->id);
+
+            abort_if(
+                $lockedMother->pregnancies()->active()->exists(),
+                422,
+                'Bunda masih memiliki kehamilan aktif.'
+            );
+
+            $hpht = Carbon::parse($validated['hpht_date']);
+
+            Pregnancy::create([
+                'mother_id' => $lockedMother->id,
+                'hpht_date' => $hpht->toDateString(),
+                'hpl_date' => $hpht->copy()->addDays(280)->toDateString(),
+                'status' => 'active',
+            ]);
+        });
+
+        return redirect()
+            ->route('mother.dashboard')
+            ->with('success', 'Data kehamilan baru Bunda berhasil dimulai.');
     }
 }

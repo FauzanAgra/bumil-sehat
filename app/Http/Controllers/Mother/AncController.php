@@ -24,6 +24,7 @@ class AncController extends Controller
         }
 
         $schedules = $pregnancy->ancSchedules()
+            ->with(['ancRecord.usgImage'])
             ->orderBy('anc_number')
             ->get();
 

@@ -105,7 +105,7 @@ Menjadi pendamping digital pencatatan kehamilan tingkat Puskesmas yang **tepat g
 1. **Single-Puskesmas**: 1 instance aplikasi melayani 1 Puskesmas. Multi-Puskesmas di luar cakupan MVP & Wave 2.
 2. **Verifikasi Wajib Nakes**: Akun `midwife` dan `doctor` dibuat dengan `is_verified = false` dan wajib diverifikasi Admin sebelum dapat mengakses dashboard (diarahkan ke `/waiting-approval`). Akun `mother` langsung aktif (`is_verified = true`).
 3. **Pemetaan Wilayah Pra-Registrasi**: Admin memetakan `subdistricts`, `areas` (RW), dan `midwife_areas` sebelum Ibu mendaftar. Jika suatu RW belum memiliki Bidan aktif, `assigned_midwife_id` bernilai `null` (tidak ada fallback otomatis) sampai ditetapkan Admin atau Ibu memperbarui wilayah.
-4. **Cakupan Akses Dokter (`SEC-RISK-001` Confirmed)**: Karena model Single-Puskesmas, seluruh tenaga medis ber-role `doctor` yang terverifikasi berwenang melihat seluruh ibu hamil aktif di Puskesmas secara *read-only* dengan NIK ter-mask 4 digit awal.
+4. **Cakupan Akses Dokter (`SEC-RISK-001` Confirmed)**: Karena model Single-Puskesmas, seluruh tenaga medis ber-role `doctor` yang terverifikasi berwenang melihat seluruh ibu hamil aktif di Puskesmas secara *read-only* terhadap data klinis ANC (NIK ter-mask 4 digit awal), serta pada Wave 3 dapat menambahkan catatan rekomendasi tindak lanjut (`doctor_recommendations`) yang terbaca oleh Bidan pendamping dan Ibu Hamil.
 
 ### Matriks Hak Akses
 
@@ -120,6 +120,11 @@ Menjadi pendamping digital pencatatan kehamilan tingkat Puskesmas yang **tepat g
 | Validasi Kondisi Risiko & Kunci Data ANC | ❌ | ✅ (Irreversible lock) | ❌ | ❌ |
 | Catat Konsumsi Harian TTD | ✅ (Jika TTD aktif) | ❌ | ❌ | ❌ |
 | Aktivasi / Toggle Status TTD | ❌ | ✅ (Auto & Manual) | ❌ | ❌ |
+| Tutup Siklus Kehamilan (`active` → `completed`) | ❌ | ✅ (Pasien binaannya) | ❌ | ❌ (Read-only) |
+| Mulai Kehamilan Baru (HPHT, bila tanpa kehamilan `active`) | ✅ (Sendiri) | ✅ (Pasien binaannya) | ❌ | ❌ |
+| Tulis / Lihat Rekomendasi Dokter (`doctor_recommendations`) | ✅ (Read-only) | ✅ (Read-only pasien binaan) | ✅ (Tulis & baca) | ❌ (Read-only) |
+| Lihat Grafik Tren Klinis ANC 1–6 | ✅ (Riwayat ANC) | ✅ (Detail pasien) | ✅ (Detail pasien) | ❌ |
+| Pengingat Jadwal ANC H-1/Hari-H & Tombol 1-Klik WA | ✅ (Banner Dashboard) | ✅ (Tombol Ingatkan via WA) | ❌ | ❌ |
 | Baca Artikel Edukasi (Filter Usia Kehamilan) | ✅ | ❌ | ❌ | ✅ (Full CMS CRUD) |
 | Direktori Konsultasi WhatsApp Nakes | ✅ | ❌ | ❌ | ✅ (Kelola spesialisasi) |
 | Akses Tampilan NIK (Data Minimization) | Mask seluruh digit (`****************`) | 6 digit awal (`320401**********`); boleh dekripsi penuh teraudit | 4 digit awal (`3204************`); tidak boleh dekripsi penuh | Penuh (teraudit di `nik_audit_logs`) |
@@ -148,7 +153,8 @@ flowchart LR
 1. **Perhitungan HPL (Aturan Naegele)**:
    $$\text{HPL} = \text{HPHT} + 280\text{ hari}$$
 2. **Usia Kehamilan (Gestational Week)**:
-   $$\text{Gestational Week} = \left\lfloor \frac{\text{Hari ini} - \text{HPHT}}{7} \right\rfloor$$
+   $$\text{Gestational Week} = \left\lfloor \frac{\text{Tanggal Acuan} - \text{HPHT}}{7} \right\rfloor$$
+   Tanggal Acuan adalah `Hari ini` untuk kehamilan `active`, dan dibekukan pada `completed_at` untuk kehamilan `completed` (Wave 3) agar usia kehamilan tidak terus bertambah setelah siklus selesai.
 3. **Klasifikasi Trimester**:
    - Trimester 1: usia kehamilan ≤ 12 minggu
    - Trimester 2: usia kehamilan 13–27 minggu
@@ -172,6 +178,10 @@ flowchart LR
 8. **Immutability Data**:
    - `AncRecord` dengan `is_locked = true` tidak dapat diubah maupun dihapus (dilindungi model hook `updating` & `deleting`).
    - `NikAuditLog` bersifat *append-only / immutable* (melarang update, delete, dan drop table di production).
+9. **Siklus Kehamilan & Penutupan (`Wave 3`)**:
+   - Setiap Ibu memiliki maksimal 1 kehamilan berstatus `active` pada satu waktu (ditegakkan dengan `DB::transaction()` + `MotherProfile::lockForUpdate()`).
+   - Penutupan kehamilan (`active` → `completed`) hanya dapat dilakukan oleh Bidan pendamping; menyimpan `completed_at`, `completed_by`, dan `completion_note`, membekukan perhitungan `gestational_week` pada `completed_at`, serta menonaktifkan `ttd_statuses` yang masih aktif.
+   - Kehamilan baru (input HPHT → HPL +280 hari) hanya boleh dibuat (oleh Bidan pendamping atau Ibu sendiri) jika belum ada kehamilan `active`.
 
 ---
 
@@ -214,6 +224,12 @@ flowchart LR
 ### Keamanan NIK & Audit Log (UU PDP)
 - **FR-025**: Seluruh penyimpanan, pencarian, masking, dan dekripsi NIK wajib melewati `NIKService` & trait `HasNIKEncryption`, dan setiap operasi baca/dekripsi/gagal wajib tercatat di `nik_audit_logs`.
 
+### Modul Wave 3 — Clinical Continuity & Maternal Engagement
+- **FR-026 (Siklus Kehamilan `active` → `completed` & Kehamilan Baru)**: Bidan pendamping dapat menutup kehamilan aktif pasien binaannya dengan catatan penutupan opsional (`completed_at`, `completed_by`, `completion_note`) yang otomatis menonaktifkan TTD aktif dan membekukan usia kehamilan; Bidan pendamping maupun Ibu dapat memulai kehamilan baru (HPHT) hanya saat tidak ada kehamilan `active`.
+- **FR-027 (Catatan Rekomendasi Dokter)**: Dokter terverifikasi dapat menulis catatan rekomendasi tindak lanjut (`routine` = Kontrol Rutin, `monitor` = Perlu Pemantauan, `refer` = Rujukan Faskes Lanjutan) pada kehamilan aktif pasien, opsional tertaut ke salah satu `anc_record_id` pada kehamilan yang sama; rekomendasi ditampilkan pada detail Dokter, detail Bidan pendamping, dan kartu ramah di Dashboard Ibu.
+- **FR-028 (Grafik Tren Klinis ANC 1–6)**: Halaman detail pasien Bidan, detail pasien Dokter, dan Riwayat ANC Ibu menyajikan grafik tren klinis Berat Badan (kg), Tekanan Darah Sistolik/Diastolik (mmHg + garis ambang `140/90`), Hemoglobin (g/dL + garis ambang `11.0`), dan LILA (cm + garis ambang `23.5`), dengan *empty state* yang jelas bila belum ada data.
+- **FR-029 (Pengingat Jadwal ANC H-1 & Hari-H)**: Dashboard Ibu menampilkan banner pengingat otomatis bila jadwal ANC terdekat berstatus `scheduled` jatuh pada hari ini (Hari-H) atau besok (H-1); halaman Jadwal & Detail Pasien Bidan menyediakan tombol 1-klik **"Ingatkan via WA"** (`https://wa.me/62...`) dengan pesan sapaan terisi otomatis untuk jadwal `scheduled` yang belum diisi.
+
 ---
 
 ## 11. Non-Functional Requirements
@@ -251,6 +267,10 @@ flowchart LR
 | `US-014` | Admin | Sebagai Admin, saya ingin memverifikasi akun tenaga medis, memetakan Kelurahan/RW ke Bidan, dan menambah jenis spesialisasi baru tanpa migrasi database. | FR-021, FR-022 |
 | `US-015` | Admin | Sebagai Admin, saya ingin membuat, mengedit, dan mempublikasikan artikel edukasi kehamilan dengan filter minggu kehamilan. | FR-023 |
 | `US-016` | Admin | Sebagai Admin, saya ingin memantau seluruh jejak akses NIK (`READ`, `DECRYPT`, `FAILED`) untuk memastikan kepatuhan UU PDP. | FR-024, FR-025 |
+| `US-017` | Bidan / Ibu Hamil | Sebagai Bidan, saya ingin menandai kehamilan pasien selesai agar riwayat ANC/TTD terarsip *read-only* dan usia janin berhenti bertambah; lalu saya atau Ibu dapat memulai kehamilan baru dengan HPHT baru. | FR-026 |
+| `US-018` | Dokter / Bidan / Ibu | Sebagai Dokter, saya ingin menulis catatan rekomendasi tindak lanjut (`Kontrol Rutin`/`Perlu Pemantauan`/`Rujukan`) yang langsung terbaca oleh Bidan pendamping dan Ibu Hamil. | FR-027 |
+| `US-019` | Bidan / Dokter / Ibu | Sebagai Bidan, Dokter, atau Ibu Hamil, saya ingin melihat grafik tren BB, Tekanan Darah, Hb, dan LILA sepanjang ANC 1–6 beserta garis batas risiko agar perubahan klinis cepat terlihat. | FR-028 |
+| `US-020` | Ibu Hamil / Bidan | Sebagai Ibu Hamil, saya ingin mendapat banner pengingat saat jadwal ANC besok (H-1) atau hari ini (Hari-H); sebagai Bidan, saya ingin mengirim pengingat WhatsApp 1-klik dengan pesan otomatis. | FR-029 |
 
 ---
 
@@ -266,6 +286,10 @@ flowchart LR
 - **AC-008 (Pencatatan TTD Harian)**: *Given* TTD aktif untuk kehamilan Ibu, *When* Ibu menekan tombol konsumsi TTD hari ini, *Then* `ttd_logs` untuk tanggal hari ini tersimpan dengan `is_taken = true` dan penghitungan progres meningkat (unik per hari).
 - **AC-009 (Audit Log & Masking NIK)**: *Given* pengguna mengakses profil Ibu yang menampilkan NIK, *When* ditampilkan melalui `getMaskedNik()`, *Then* format masking sesuai role (Admin penuh, Bidan 6 digit, Dokter 4 digit, Ibu/lainnya semua `*`) dan 1 baris audit tercatat di `nik_audit_logs`; upaya `update`/`delete` pada `NikAuditLog` melempar `LogicException`.
 - **AC-010 (Filter Artikel Usia Kehamilan)**: *Given* Admin mempublikasikan artikel dengan `min_week = 13` dan `max_week = 27`, *When* Ibu usia 20 minggu membuka `/mother/articles`, *Then* artikel tampil; *When* Ibu usia 8 minggu membukanya, *Then* artikel tidak muncul.
+- **AC-011 (Penutupan Kehamilan & Kehamilan Baru)**: *Given* pasien memiliki kehamilan `active` dengan TTD aktif, *When* Bidan pendamping menandai kehamilan selesai, *Then* status menjadi `completed`, `completed_at`/`completed_by`/`completion_note` tersimpan, TTD otomatis nonaktif, `gestational_week` berhenti di `completed_at`, dan Bidan lain ditolak (`403`); pembuatan kehamilan baru ditolak (`422`) selama ada kehamilan `active` dan berhasil setelah `completed`.
+- **AC-012 (Catatan Rekomendasi Dokter)**: *Given* Dokter terverifikasi membuka detail pasien dengan kehamilan aktif, *When* mengirim rekomendasi valid (`follow_up_level` + `recommendation` + opsional `anc_record_id` milik kehamilan tersebut), *Then* rekomendasi tersimpan dan tampil pada detail Dokter, detail Bidan pendamping, dan Dashboard Ibu; `anc_record_id` milik pasien lain ditolak (`422`) dan role non-dokter ditolak.
+- **AC-013 (Grafik Tren Klinis ANC 1–6)**: *Given* kehamilan memiliki catatan ANC dengan data klinis, *When* Bidan, Dokter, atau Ibu membuka layar terkait, *Then* komponen grafik merender seri BB, TD Sistolik/Diastolik (`140/90`), Hb (`11.0`), dan LILA (`23.5`) tanpa error; bila kosong, *empty state* ramah ditampilkan.
+- **AC-014 (Pengingat Jadwal H-1 / Hari-H & 1-Klik WA)**: *Given* jadwal ANC berstatus `scheduled` bertanggal hari ini atau besok, *When* Ibu membuka Dashboard, *Then* banner pengingat Hari-H / H-1 tampil; *When* Bidan membuka Jadwal atau Detail Pasien, *Then* tombol **"Ingatkan via WA"** (`wa.me/62...`) tampil dengan teks pengingat terisi otomatis.
 
 ---
 
@@ -280,21 +304,25 @@ flowchart LR
 - Dashboard & fitur supervisi Dokter (Ringkasan Puskesmas, Filter risiko, Pencarian nama/NIK, Detail ANC 1–6 + USG, Profil).
 - Integrasi Laravel Octane + FrankenPHP & seeder data demo.
 
-### Wave 2 — Stabilization, Security Hardening & Automated Testing (Aktif Dikerjakan Selanjutnya)
+### Wave 2 — Stabilization, Security Hardening & Automated Testing (Selesai — 100%)
 - Perbaikan 4 temuan fungsional kritis (pembersihan `EventServiceProvider` legacy & verifikasi auto-discovery TTD, redirect `midwife.profile.setting`, redirect `admin`, penanganan error duplikat kompatibel PostgreSQL).
 - Remediasi seluruh isu audit keamanan (`SEC-002` s.d. `SEC-015`, `SEC-RISK-002`, `SEC-RISK-003`).
 - Pembangunan rangkaian Automated Tests PHPUnit (Unit, Feature, dan 9 skenario *Security Test Matrix* `SEC-016`).
 
+### Wave 3 — Clinical Continuity & Maternal Engagement (Selesai — 100%)
+- Penutupan siklus kehamilan (`active` → `completed`) oleh Bidan pendamping, arsip riwayat *read-only*, pembekuan usia janin, dan pembukaan kehamilan baru (HPHT) oleh Bidan/Ibu.
+- Catatan rekomendasi tindak lanjut oleh Dokter (`doctor_recommendations`) yang langsung terbaca oleh Bidan pendamping dan Ibu Hamil.
+- Grafik tren klinis ANC 1–6 (BB, Tekanan Darah, Hb, LILA + garis ambang risiko) di layar Bidan, Dokter, dan Riwayat ANC Ibu.
+- Pengingat otomatis jadwal ANC H-1 & Hari-H di Dashboard Ibu + tombol 1-klik **"Ingatkan via WA"** untuk Bidan.
+
 ---
 
-## 15. Out of Scope (Di Luar Wave 1 & Wave 2)
+## 15. Out of Scope (Di Luar Wave 1–3)
 
 Item berikut secara sadar dikeluarkan dari cakupan saat ini dan dicatat sebagai kandidat pengembangan masa depan (*Future Ideas*):
 - Pemantauan pasca melahirkan, nifas, KB, dan kesehatan bayi.
-- Modul input catatan rekomendasi klinis terpisah oleh Dokter (saat ini Dokter berfokus pada supervisi *read-only* dan konsultasi via WhatsApp).
-- Alur otomatis / tombol UI penutupan status kehamilan (`active` → `completed`) setelah ANC ke-6 selesai atau persalinan.
-- Chat *real-time* di dalam aplikasi (saat ini menggunakan direktori kontak deep-link WhatsApp).
-- Push notification / pengingat otomatis via WhatsApp API, SMS, atau email.
+- Chat *real-time* di dalam aplikasi (saat ini menggunakan direktori kontak & pengingat 1-klik deep-link WhatsApp).
+- Push notification / pengingat otomatis berbasis gateway berbayar (WhatsApp Business API, SMS gateway, atau email otomatis).
 - Diagnosis otomatis berbasis AI.
 - Kontribusi artikel oleh Bidan atau Dokter (komentar/like juga di luar cakupan).
 - Dukungan Multi-Puskesmas / Multi-Tenant.
@@ -306,8 +334,9 @@ Item berikut secara sadar dikeluarkan dari cakupan saat ini dan dicatat sebagai 
 
 | Wave | Nama | Tujuan Utama | Status |
 | --- | --- | --- | --- |
-| **Wave 1** | Core MVP | Membangun seluruh fitur inti pencatatan ANC 1–6, TTD, NIK UU PDP, Filament Admin, dan dashboard 3 role | **Mayoritas Selesai** (detail per task di [TASKS.md](./TASKS.md)) |
-| **Wave 2** | Stabilization, Security Hardening & Testing | Memperbaiki bug fungsional, menutup seluruh celah audit keamanan (`SEC-002`–`SEC-016`), menyelaraskan PostgreSQL + Octane, dan membangun test suite otomatis | **Pending** (prioritas eksekusi berikutnya) |
+| **Wave 1** | Core MVP | Membangun seluruh fitur inti pencatatan ANC 1–6, TTD, NIK UU PDP, Filament Admin, dan dashboard 3 role | **Selesai** (detail di [TASKS.md](./TASKS.md)) |
+| **Wave 2** | Stabilization, Security Hardening & Testing | Memperbaiki bug fungsional, menutup seluruh celah audit keamanan (`SEC-002`–`SEC-016`), menyelaraskan PostgreSQL + Octane, dan membangun test suite otomatis | **Selesai** (43/43 task Wave 1–2 lulus) |
+| **Wave 3** | Clinical Continuity & Maternal Engagement | Menambah penutupan siklus kehamilan & kehamilan baru, catatan rekomendasi Dokter, grafik tren klinis ANC 1–6, serta pengingat H-1 & 1-klik WA | **Selesai** (55/55 task Wave 1–3 lulus) |
 
 ---
 

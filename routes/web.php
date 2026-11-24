@@ -7,6 +7,7 @@ use App\Http\Controllers\Doctor\PatientController as DoctorPatient;
 use App\Http\Controllers\Doctor\ProfileController as DoctorProfile;
 use App\Http\Controllers\Midwife\DashboardController as MidwifeDashboard;
 use App\Http\Controllers\Midwife\PatientController as MidwifePatient;
+use App\Http\Controllers\Midwife\PregnancyController as MidwifePregnancy;
 use App\Http\Controllers\Midwife\ProfileController as MidwifeSetting;
 use App\Http\Controllers\Midwife\ScheduleController as MidwifeSchedule;
 use App\Http\Controllers\Midwife\ValidationController as MidwifeValidation;
@@ -48,6 +49,7 @@ Route::get('/waiting-approval', fn () => view('auth.waiting-approval'))->name('w
 Route::middleware(['auth', 'role:mother'])->prefix('mother')->name('mother.')->group(function () {
 
     Route::get('/dashboard', [MotherDashboard::class, 'index'])->name('dashboard');
+    Route::post('/pregnancies', [MotherDashboard::class, 'storePregnancy'])->name('pregnancies.store');
 
     Route::prefix('anc')->name('anc.')->controller(AncController::class)->group(function () {
         Route::get('/history', 'history')->name('history');
@@ -102,6 +104,11 @@ Route::middleware(['auth', 'role:midwife'])->prefix('midwife')->name('midwife.')
     Route::patch('/pregnancies/{pregnancy}/toggle-ttd', [MidwifePatient::class, 'toggleTtd'])
         ->name('pregnancies.toggle-ttd');
 
+    Route::patch('/pregnancies/{pregnancy}/complete', [MidwifePregnancy::class, 'complete'])
+        ->name('pregnancies.complete');
+    Route::post('/patients/{motherProfile}/pregnancies', [MidwifePregnancy::class, 'store'])
+        ->name('patients.pregnancies.store');
+
     Route::controller(MidwifeSetting::class)->group(function () {
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/setting', 'show')->name('setting');
@@ -121,6 +128,7 @@ Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->name('doctor.')->g
     Route::controller(DoctorPatient::class)->group(function () {
         Route::get('/patients', 'index')->name('patients');
         Route::get('/patients/{motherProfile}', 'show')->name('patients.show');
+        Route::post('/patients/{motherProfile}/recommendations', 'storeRecommendation')->name('patients.recommendations.store');
     });
 
     // Profil & setting

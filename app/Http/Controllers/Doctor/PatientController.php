@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Doctor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreDoctorRecommendationRequest;
+use App\Models\DoctorRecommendation;
 use App\Models\MotherProfile;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -139,10 +142,18 @@ class PatientController extends Controller
             'activePregnancy.ancSchedules.ancRecord.detectedConditions',
             'activePregnancy.ancSchedules.ancRecord.validation.midwife',
             'activePregnancy.ancSchedules.ancRecord.usgImage',
+            'activePregnancy.recommendations.doctor.medicalProfile.specialization',
+            'activePregnancy.recommendations.ancRecord.schedule',
             'assignedMidwife',
         ]);
 
         $pregnancy = $motherProfile->activePregnancy;
+        $recommendations = $pregnancy?->recommendations ?? collect();
+
+        $ancRecordsForSelect = $pregnancy?->ancSchedules
+            ->filter(fn ($schedule) => $schedule->ancRecord !== null)
+            ->sortBy('anc_number')
+            ->values() ?? collect();
 
         // Timeline ANC 1–6: isi slot kosong dengan null
         $ancTimeline = collect(range(1, 6))->map(function ($n) use ($pregnancy) {
@@ -170,6 +181,31 @@ class PatientController extends Controller
             'pregnancy',
             'ancTimeline',
             'activeConditions',
+            'recommendations',
+            'ancRecordsForSelect',
         ));
+    }
+
+    public function storeRecommendation(
+        StoreDoctorRecommendationRequest $request,
+        MotherProfile $motherProfile
+    ): RedirectResponse {
+        abort_if(
+            ! $motherProfile->activePregnancy,
+            404,
+            'Data tidak ditemukan atau kehamilan sudah tidak aktif.'
+        );
+
+        DoctorRecommendation::create([
+            'pregnancy_id' => $motherProfile->activePregnancy->id,
+            'anc_record_id' => $request->validated('anc_record_id'),
+            'doctor_id' => $request->user()->id,
+            'follow_up_level' => $request->validated('follow_up_level'),
+            'recommendation' => trim($request->validated('recommendation')),
+        ]);
+
+        return redirect()
+            ->route('doctor.patients.show', $motherProfile->id)
+            ->with('success', 'Catatan rekomendasi berhasil disimpan dan diteruskan ke Bidan serta Ibu Hamil.');
     }
 }
