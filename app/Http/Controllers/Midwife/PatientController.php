@@ -7,8 +7,10 @@ use App\Models\MotherProfile;
 use App\Models\Pregnancy;
 use App\Models\TtdStatus;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
@@ -283,30 +285,42 @@ class PatientController extends Controller
             403
         );
 
-        $ttdStatus = $pregnancy->ttdStatus;
+        $ttdStatus = DB::transaction(function () use ($pregnancy): TtdStatus {
+            $lockedPregnancy = Pregnancy::lockForUpdate()->findOrFail($pregnancy->id);
 
-        if (! $ttdStatus) {
+            $ttdStatus = TtdStatus::where('pregnancy_id', $lockedPregnancy->id)
+                ->lockForUpdate()
+                ->first();
 
-            $ttdStatus = TtdStatus::create([
-                'pregnancy_id' => $pregnancy->id,
-                'is_active' => true,
-                'started_at' => now(),
-                'activated_by' => 'midwife',
-            ]);
-        } else {
+            if (! $ttdStatus) {
+                try {
+                    return TtdStatus::create([
+                        'pregnancy_id' => $lockedPregnancy->id,
+                        'is_active' => true,
+                        'started_at' => now(),
+                        'activated_by' => 'midwife',
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    $ttdStatus = TtdStatus::where('pregnancy_id', $lockedPregnancy->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+                }
+            }
+
+            $nextActive = ! $ttdStatus->is_active;
 
             $ttdStatus->update([
-                'is_active' => ! $ttdStatus->is_active,
-                'started_at' => ! $ttdStatus->is_active
-                    ? now()
-                    : $ttdStatus->started_at,
+                'is_active' => $nextActive,
+                'started_at' => $nextActive ? ($ttdStatus->started_at ?? now()) : $ttdStatus->started_at,
                 'activated_by' => 'midwife',
             ]);
-        }
+
+            return $ttdStatus->fresh();
+        });
 
         return response()->json([
             'success' => true,
-            'is_active' => $ttdStatus->fresh()->is_active,
+            'is_active' => $ttdStatus->is_active,
         ]);
     }
 }

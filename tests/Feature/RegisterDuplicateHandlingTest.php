@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Area;
 use App\Models\Subdistrict;
 use App\Models\User;
+use App\Services\NIKService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -17,6 +18,7 @@ class RegisterDuplicateHandlingTest extends TestCase
     {
         config(['app.nik_hash_salt' => str_repeat('a', 64)]);
 
+        $nikService = app(NIKService::class);
         $subdistrict = Subdistrict::create(['name' => 'Maju']);
         $area = Area::create([
             'subdistrict_id' => $subdistrict->id,
@@ -35,7 +37,8 @@ class RegisterDuplicateHandlingTest extends TestCase
                 'name' => 'Ibu Duplikat',
                 'phone' => '08220000099',
                 'password' => Hash::make('Password123'),
-                'nik' => '3201010101010099',
+                'nik_encrypted' => $nikService->encrypt('3201010101010099'),
+                'nik_hash' => $nikService->hashNIK('3201010101010099'),
                 'birth_date' => '1998-05-10',
                 'address' => 'Jl. Melati No. 1',
                 'subdistrict_id' => $subdistrict->id,

@@ -40,7 +40,7 @@ class ValidationController extends Controller
     {
         $user = Auth::user();
 
-        $validation = DB::transaction(function () use ($ancRecord, $user, $request) {
+        DB::transaction(function () use ($ancRecord, $user, $request): void {
 
             // Pessimistic lock — cegah dua request bersamaan
             $freshRecord = AncRecord::lockForUpdate()->findOrFail($ancRecord->id);
@@ -70,11 +70,11 @@ class ValidationController extends Controller
             }
 
             // Kunci record ANC
-            return AncValidation::lockedRecord($freshRecord, $user, $request->notes);
-        });
+            $validation = AncValidation::lockedRecord($freshRecord, $user, $request->notes);
 
-        // Dispatch event setelah transaction selesai
-        AncValidationCreated::dispatch($validation);
+            // Dispatch sinkron di dalam batas transaksi agar validasi & aktivasi TTD atomik (SEC-010, ADR-0004)
+            AncValidationCreated::dispatch($validation);
+        });
 
         return redirect()
             ->route('midwife.patients.show', $ancRecord->mother_id)

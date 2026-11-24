@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\MotherProfiles\Schemas;
 
-use App\Services\NIKService;
-// use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -23,7 +21,7 @@ class MotherProfileInfolist
                         TextEntry::make('nik_masked')
                             ->label('NIK')
                             ->getStateUsing(
-                                fn ($record) => app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
+                                fn ($record) => $record->getMaskedNik(auth()->user()?->role)
                             )
                             ->fontFamily('mono'),
 

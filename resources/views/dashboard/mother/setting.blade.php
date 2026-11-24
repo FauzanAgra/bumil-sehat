@@ -58,7 +58,7 @@
                         <span class="text-gray-500">NIK</span>
                     </div>
                     <span class="font-semibold text-gray-700 font-mono">
-                        {{ $motherProfile ? app(\App\Services\NIKService::class)->mask($motherProfile->nik_encrypted, 'mother') : '—' }}
+                        {{ $motherProfile ? $motherProfile->getMaskedNik('mother') : '—' }}
                     </span>
                 </div>
 

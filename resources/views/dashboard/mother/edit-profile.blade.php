@@ -65,7 +65,7 @@
                                 <i class="fa-solid fa-id-card text-xs"></i>
                             </div>
                             <input type="text"
-                                value="{{ $motherProfile ? app(\App\Services\NIKService::class)->mask($motherProfile->nik_encrypted, 'mother') : '—' }}"
+                                value="{{ $motherProfile ? $motherProfile->getMaskedNik('mother') : '—' }}"
                                 readonly
                                 class="w-full pl-14 pr-4 py-4 rounded-2xl bg-gray-50 border border-dashed border-gray-200 text-sm text-gray-400 cursor-not-allowed font-mono">
                         </div>

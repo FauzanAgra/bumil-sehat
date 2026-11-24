@@ -23,5 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Jangan pernah flash NIK atau password ke session _old_input (SEC-002)
+        $exceptions->dontFlash([
+            'current_password',
+            'password',
+            'password_confirmation',
+            'nik',
+        ]);
     })->create();

@@ -4,12 +4,12 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 
 ## Progress Overview
 
-- **Status Progress**: 25 / 43 Completed (58%)
+- **Status Progress**: 43 / 43 Completed (100%)
 - **Total Tasks**: 43
-- **Completed (`[x]`)**: 25
+- **Completed (`[x]`)**: 43
 - **In Progress (`[~]`)**: 0
 - **Blocked (`[!]`)**: 0
-- **Pending (`[ ]`)**: 18
+- **Pending (`[ ]`)**: 0
 
 > **Penanda Status**: `[ ]` Pending · `[~]` In Progress · `[x]` Completed · `[!]` Blocked
 
@@ -90,26 +90,26 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 
 | Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
 | :-: | --- | --- | --- | --- | --- | :-: |
-| [ ] | `W2-005` | Hilangkan penyimpanan NIK plaintext di session registrasi & hapus `withInput()` untuk field NIK (`SEC-002`) | High | `W1-006` | Session registrasi hanya menyimpan NIK terenkripsi dan error duplikasi tidak mem-flash NIK mentah | - |
-| [ ] | `W2-006` | Tambahkan regenerasi session ID setelah `Auth::login()` pada registrasi Ibu & Tenaga Medis (`SEC-003`) | High | `W2-005` | Session ID berganti segera setelah registrasi sukses dan key `reg_mother` terhapus bersih | - |
-| [ ] | `W2-007` | Bungkus `Mother\AncController@store` dalam transaksi + `lockForUpdate` & guarded update `is_locked = false` (`SEC-004`) | High | `W1-010` | Penulisan ANC Ibu tidak bisa menimpa catatan yang sedang/sudah dikunci Bidan | - |
-| [ ] | `W2-008` | Batasi submit ANC hanya untuk jadwal berstatus `scheduled` pada `activePregnancy` & tandai `done` secara atomik (`SEC-005`) | High | `W2-007` | Submit pada jadwal `cancelled`, `missed`, `done`, atau kehamilan non-aktif ditolak tanpa memutasi jadwal | - |
-| [ ] | `W2-009` | Tegakkan validasi server-side unggahan `usg_image` wajib pada ANC ke-1 & ke-5 jika belum ada foto USG (`SEC-012`) | Medium | `W2-008` | Request langsung tanpa `usg_image` pada ANC 1 & 5 (tanpa USG lama) ditolak dengan 422 validation error | - |
-| [ ] | `W2-010` | Arahkan resolusi kehamilan pada `AutoActivateTtdOnValidation` ke `ancRecord->schedule->pregnancy` & jalankan atomik di transaksi validasi (`SEC-006`, `SEC-010`) | High | `W2-001` | Validasi ANC historis tidak mengaktifkan TTD kehamilan lain; validasi & TTD komit/rollback atomik (`ADR-0004`) | - |
-| [ ] | `W2-011` | Lindungi pembuatan & toggle manual `TtdStatus` dengan transaksi + `lockForUpdate` pada baris `Pregnancy` (`SEC-011`) | Medium | `W2-010` | Request konkuren aktivasi/toggle TTD tidak memicu unique-key exception atau *lost update* | - |
-| [ ] | `W2-012` | Ganti seluruh pemanggilan langsung `NIKService::mask()` di Blade & Filament dengan `MotherProfile::getMaskedNik()` (`SEC-007`) | Medium | `W1-004` | Seluruh tampilan NIK (profil Ibu & tabel/infolist Filament) otomatis tercatat di `nik_audit_logs` | - |
-| [ ] | `W2-013` | Validasi server-side relasi `areas.subdistrict_id === subdistrict_id` pada registrasi & edit profil Ibu (`SEC-008`) | Medium | `W1-006`, `W1-013` | Request dengan `area_id` yang tidak berada di bawah `subdistrict_id` ditolak dengan validation error | - |
-| [ ] | `W2-014` | Bungkus pembuatan `User`, `MotherProfile`, & `Pregnancy` di `RegisterController@storeHpht` dalam `DB::transaction()` (`SEC-009`) | Medium | `W2-004`, `W2-005` | Kegagalan di tengah proses registrasi me-rollback seluruh tabel tanpa meninggalkan akun yatim (*orphaned*) | - |
-| [ ] | `W2-015` | Seragamkan kebijakan password minimum (8 karakter) di semua role & selaraskan `.env.example` / `trustProxies` aman produksi (`SEC-013`, `SEC-014`) | Medium | `W1-020` | Semua registrasi & ganti password memakai aturan password terpusat; `.env.example` & `bootstrap/app.php` aman produksi | - |
-| [ ] | `W2-016` | Turunkan `anc_records.mother_id` langsung dari `schedule->pregnancy->mother_id` & ketatkan mass-assignment (`SEC-015`) | Low | `W2-007` | Tidak ada celah ketidaksinkronan antara `schedule_id` dan `mother_id` pada `anc_records` | - |
-| [ ] | `W2-017` | Tambahkan sanitasi HTML allowlist untuk konten rich text artikel & audit dependensi (`SEC-RISK-002`, `SEC-RISK-003`) | Medium | `W1-012`, `W1-019` | Payload XSS pada konten artikel dibersihkan/diblokir; hasil `composer audit` & `npm audit` terdokumentasi bersih | - |
+| [x] | `W2-005` | Hilangkan penyimpanan NIK plaintext di session registrasi & hapus `withInput()` untuk field NIK (`SEC-002`) | High | `W1-006` | Session registrasi hanya menyimpan `nik_encrypted` + `nik_hash`; `nik` masuk `dontFlash` & error tidak mem-flash NIK mentah | 2026-11-24 |
+| [x] | `W2-006` | Tambahkan regenerasi session ID setelah `Auth::login()` pada registrasi Ibu & Tenaga Medis (`SEC-003`) | High | `W2-005` | Session ID berganti segera setelah registrasi sukses dan key `reg_mother` terhapus bersih | 2026-11-24 |
+| [x] | `W2-007` | Bungkus `Mother\AncController@store` dalam transaksi + `lockForUpdate` & guarded update `is_locked = false` (`SEC-004`) | High | `W1-010` | Penulisan ANC Ibu tidak bisa menimpa catatan yang sedang/sudah dikunci Bidan; `is_locked = true` bersifat irreversible | 2026-11-24 |
+| [x] | `W2-008` | Batasi submit ANC hanya untuk jadwal berstatus `scheduled` pada `activePregnancy` & tandai `done` secara atomik (`SEC-005`) | High | `W2-007` | Submit pada jadwal `cancelled`, `missed`, `done` tanpa record, atau kehamilan non-aktif ditolak (`422`) tanpa memutasi jadwal | 2026-11-24 |
+| [x] | `W2-009` | Tegakkan validasi server-side unggahan `usg_image` wajib pada ANC ke-1 & ke-5 jika belum ada foto USG (`SEC-012`) | Medium | `W2-008` | Request langsung tanpa `usg_image` pada ANC 1 & 5 (tanpa USG lama) ditolak dengan error validasi `usg_image` | 2026-11-24 |
+| [x] | `W2-010` | Arahkan resolusi kehamilan pada `AutoActivateTtdOnValidation` ke `ancRecord->schedule->pregnancy` & jalankan atomik di transaksi validasi (`SEC-006`, `SEC-010`) | High | `W2-001` | Validasi ANC historis tidak mengaktifkan TTD kehamilan lain; validasi & TTD komit/rollback atomik (`ADR-0004`) | 2026-11-24 |
+| [x] | `W2-011` | Lindungi pembuatan & toggle manual `TtdStatus` dengan transaksi + `lockForUpdate` pada baris `Pregnancy` (`SEC-011`) | Medium | `W2-010` | Request konkuren aktivasi/toggle TTD aman dari unique-key exception dan *lost update* | 2026-11-24 |
+| [x] | `W2-012` | Ganti seluruh pemanggilan langsung `NIKService::mask()` di Blade & Filament dengan `MotherProfile::getMaskedNik()` (`SEC-007`) | Medium | `W1-004` | Seluruh tampilan NIK (profil Ibu & tabel/infolist Filament) otomatis tercatat di `nik_audit_logs` | 2026-11-24 |
+| [x] | `W2-013` | Validasi server-side relasi `areas.subdistrict_id === subdistrict_id` pada registrasi & edit profil Ibu (`SEC-008`) | Medium | `W1-006`, `W1-013` | Request dengan `area_id` yang tidak berada di bawah `subdistrict_id` ditolak dengan validation error | 2026-11-24 |
+| [x] | `W2-014` | Bungkus pembuatan `User`, `MotherProfile`, & `Pregnancy` di `RegisterController@storeHpht` dalam `DB::transaction()` (`SEC-009`) | Medium | `W2-004`, `W2-005` | Kegagalan di tengah proses registrasi me-rollback seluruh tabel tanpa meninggalkan akun yatim (*orphaned*) | 2026-11-24 |
+| [x] | `W2-015` | Seragamkan kebijakan password minimum (8 karakter) di semua role & selaraskan `.env.example` / `trustProxies` aman produksi (`SEC-013`, `SEC-014`) | Medium | `W1-020` | Semua registrasi & ganti password memakai `Password::defaults()` (min 8); `.env.example` & `config/trustedproxy.php` aman produksi | 2026-11-24 |
+| [x] | `W2-016` | Turunkan `anc_records.mother_id` langsung dari `schedule->pregnancy->mother_id` & ketatkan mass-assignment (`SEC-015`) | Low | `W2-007` | `mother_id` & `is_locked` keluar dari `$fillable`; hook `saving` menolak ketidaksinkronan `schedule_id` vs `mother_id` | 2026-11-24 |
+| [x] | `W2-017` | Tambahkan sanitasi HTML allowlist untuk konten rich text artikel & audit dependensi (`SEC-RISK-002`, `SEC-RISK-003`) | Medium | `W1-012`, `W1-019` | `HtmlSanitizerService` membersihkan XSS saat simpan & render; `composer audit` & `npm audit` dieksekusi & hasilnya dicatat di walkthrough | 2026-11-24 |
 
 ### Module: Automated Test Suite (`SEC-016`)
 
 | Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
 | :-: | --- | --- | --- | --- | --- | :-: |
-| [ ] | `W2-018` | Perbaiki `tests/Feature/ExampleTest.php` (`GET /` → redirect 302 `login`) & siapkan base test helper + `NIK_HASH_SALT` testing | High | `W2-001` | `composer test` hijau 100% sebagai baseline testing | - |
-| [ ] | `W2-019` | Tambahkan Unit Tests: `NIKService`, `HasNIKEncryption`, `NikAuditLog` immutability, kalkulasi `Pregnancy`, & deteksi risiko `AncRecord` | High | `W2-018` | Seluruh logika enkripsi, masking, HPL, trimester, BMI, KEK/Preeklampsia/Anemia lulus uji | - |
-| [ ] | `W2-020` | Tambahkan Feature Tests: Isolasi `/admin`, matriks role `EnsureRole`, redirect admin/nakes, & keamanan registrasi (`SEC-002`, `SEC-003`, `SEC-008`, `SEC-009`, `SEC-014`) | High | `W2-003`, `W2-006`, `W2-013`, `W2-014`, `W2-015`, `W2-018` | Semua skenario otorisasi panel/role & integritas registrasi terverifikasi otomatis | - |
-| [ ] | `W2-021` | Tambahkan Feature Tests: IDOR lintas role, penjadwalan & `missed` ANC, jadwal eligible (`SEC-005`), USG wajib ANC 1 & 5 (`SEC-012`), audit NIK (`SEC-007`), & XSS artikel (`SEC-RISK-002`) | High | `W2-008`, `W2-009`, `W2-012`, `W2-017`, `W2-018` | Seluruh skenario IDOR, validasi ANC, audit log NIK, dan sanitasi artikel lulus uji | - |
-| [ ] | `W2-022` | Tambahkan Feature Tests: Validasi & penguncian ANC, konkurensi simpan vs lock (`SEC-004`), Auto-TTD (`< 10w`, `>= 10w`, historis `SEC-006`/`SEC-010`), toggle TTD (`SEC-011`), & profil Bidan (`W2-002`) | High | `W2-002`, `W2-007`, `W2-010`, `W2-011`, `W2-018` | Seluruh alur validasi, penguncian permanen, dan TTD lulus uji tanpa regresi | - |
+| [x] | `W2-018` | Perbaiki `tests/Feature/ExampleTest.php` (`GET /` → redirect 302 `login`) & siapkan `NIK_HASH_SALT` di `phpunit.xml` | High | `W2-001` | `composer test` hijau 100% sebagai baseline testing | 2026-11-24 |
+| [x] | `W2-019` | Tambahkan Unit Tests: `NIKService`, `HasNIKEncryption`, `NikAuditLog` immutability, kalkulasi `Pregnancy`, deteksi risiko `AncRecord`, & `HtmlSanitizerService` | High | `W2-018` | Seluruh logika enkripsi, masking, HPL, trimester, BMI, KEK/Preeklampsia/Anemia, & sanitasi HTML lulus uji | 2026-11-24 |
+| [x] | `W2-020` | Tambahkan Feature Tests: Isolasi `/admin`, matriks role `EnsureRole`, redirect admin/nakes, & keamanan registrasi (`SEC-002`, `SEC-003`, `SEC-008`, `SEC-009`, `SEC-014`) | High | `W2-003`, `W2-006`, `W2-013`, `W2-014`, `W2-015`, `W2-018` | Semua skenario otorisasi panel/role & integritas registrasi terverifikasi otomatis | 2026-11-24 |
+| [x] | `W2-021` | Tambahkan Feature Tests: IDOR lintas role, penjadwalan & `missed` ANC, jadwal eligible (`SEC-005`), USG wajib ANC 1 & 5 (`SEC-012`), audit NIK (`SEC-007`), & XSS artikel (`SEC-RISK-002`) | High | `W2-008`, `W2-009`, `W2-012`, `W2-017`, `W2-018` | Seluruh skenario IDOR, validasi ANC, audit log NIK, dan sanitasi artikel lulus uji | 2026-11-24 |
+| [x] | `W2-022` | Tambahkan Feature Tests: Validasi & penguncian ANC, konkurensi simpan vs lock (`SEC-004`), Auto-TTD (`< 10w`, `>= 10w`, historis `SEC-006`/`SEC-010`), toggle TTD (`SEC-011`), & profil Bidan (`W2-002`) | High | `W2-002`, `W2-007`, `W2-010`, `W2-011`, `W2-018` | Seluruh alur validasi, penguncian permanen, dan TTD lulus uji tanpa regresi (`45 passed, 238 assertions`) | 2026-11-24 |

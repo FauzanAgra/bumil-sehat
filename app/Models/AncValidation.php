@@ -41,7 +41,7 @@ class AncValidation extends Model
             'locked_at' => now(),
         ]);
 
-        $record->update(['is_locked' => true]);
+        $record->lock();
 
         return $validation;
     }

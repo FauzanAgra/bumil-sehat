@@ -15,7 +15,6 @@ class AncRecord extends Model
 
     protected $fillable = [
         'schedule_id',
-        'mother_id',
         'recorded_by',
         'weight',
         'height',
@@ -26,7 +25,6 @@ class AncRecord extends Model
         'tt_status',
         'fetal_position',
         'fetal_heart_rate',
-        'is_locked',
         'submitted_at',
     ];
 
@@ -197,9 +195,40 @@ class AncRecord extends Model
         return round($this->weight / ($heightM ** 2), 1);
     }
 
+    public function lock(): void
+    {
+        $this->is_locked = true;
+        $this->save();
+    }
+
     // Boot
     protected static function booted(): void
     {
+        // Jamin konsistensi mother_id terhadap pemilik jadwal (SEC-015)
+        static::saving(function (AncRecord $record) {
+            if (! $record->schedule_id) {
+                return;
+            }
+
+            $schedule = AncSchedule::withTrashed()
+                ->with('pregnancy')
+                ->find($record->schedule_id);
+
+            $expectedMotherId = $schedule?->pregnancy?->mother_id;
+
+            if ($expectedMotherId === null) {
+                return;
+            }
+
+            if ($record->mother_id === null) {
+                $record->mother_id = $expectedMotherId;
+            } elseif ((int) $record->mother_id !== (int) $expectedMotherId) {
+                throw new \LogicException(
+                    "ANC Record mother_id ({$record->mother_id}) tidak cocok dengan pemilik jadwal ({$expectedMotherId})."
+                );
+            }
+        });
+
         // After created
         static::created(function (AncRecord $record) {
             $record->detectConditions();
@@ -224,9 +253,8 @@ class AncRecord extends Model
         });
 
         static::updating(function (AncRecord $record) {
-            // Izinkan update is_locked = true (proses locking itu sendiri)
-            $dirty = $record->getDirty();
-            if ($record->getOriginal('is_locked') && ! (count($dirty) === 1 && isset($dirty['is_locked']))) {
+            // Begitu is_locked sudah true di DB, tidak ada perubahan apa pun yang diizinkan (irreversible)
+            if ($record->getOriginal('is_locked')) {
                 throw new \LogicException(
                     "ANC Record #{$record->id} sudah dikunci dan tidak dapat diubah."
                 );
@@ -234,7 +262,7 @@ class AncRecord extends Model
         });
 
         static::deleting(function (AncRecord $record) {
-            if ($record->is_locked) {
+            if ($record->getOriginal('is_locked') || $record->is_locked) {
                 throw new \LogicException(
                     "ANC Record #{$record->id} sudah divalidasi dan tidak dapat dihapus."
                 );

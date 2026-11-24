@@ -62,7 +62,7 @@
 
                 <div>
                     <label class="text-xs font-bold uppercase text-gray-500 ml-1 mb-1 block">NIK (KTP)</label>
-                    <input type="text" name="nik" value="{{ old('nik') }}" required maxlength="16"
+                    <input type="text" name="nik" required maxlength="16" autocomplete="off"
                         class="w-full px-4 py-3 rounded-xl border border-rose-100 bg-rose-50/30 focus:bg-white focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none text-sm font-mono tracking-widest"
                         placeholder="16 digit NIK">
                     <p class="text-[11px] text-gray-400 mt-1 ml-1">Digunakan sebagai identitas rekam medis</p>

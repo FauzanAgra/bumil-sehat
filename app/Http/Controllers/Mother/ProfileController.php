@@ -7,7 +7,9 @@ use App\Models\Area;
 use App\Models\MidwifeArea;
 use App\Models\Subdistrict;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
@@ -49,42 +51,48 @@ class ProfileController extends Controller
             'birth_date' => ['required', 'date', 'before:today'],
             'address' => ['required', 'string'],
             'subdistrict_id' => ['required', 'exists:subdistricts,id'],
-            'area_id' => ['required', 'exists:areas,id'],
+            'area_id' => [
+                'required',
+                Rule::exists('areas', 'id')->where('subdistrict_id', $request->integer('subdistrict_id')),
+            ],
             'rt' => ['nullable', 'string', 'max:10'],
         ], [
             'phone.unique' => 'Nomor HP sudah digunakan akun lain.',
             'email.unique' => 'Email sudah digunakan akun lain.',
+            'area_id.exists' => 'RW yang dipilih tidak sesuai dengan Kelurahan.',
         ]);
 
-        // Update user
-        $user->update([
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-        ]);
-
-        // Cek apakah wilayah berubah
-        $areaChanged = $motherProfile->area_id != $request->area_id;
-
-        // Update mother profile
-        $motherProfile->update([
-            'birth_date' => $request->birth_date,
-            'address' => $request->address,
-            'subdistrict_id' => $request->subdistrict_id,
-            'area_id' => $request->area_id,
-            'rt' => $request->rt,
-        ]);
-
-        // Kalau wilayah berubah, reassign bidan
-        if ($areaChanged) {
-            $midwifeArea = MidwifeArea::where('area_id', $request->area_id)
-                ->where('is_active', true)
-                ->first();
-
-            $motherProfile->update([
-                'assigned_midwife_id' => $midwifeArea?->midwife_id,
+        DB::transaction(function () use ($request, $user, $motherProfile): void {
+            // Update user
+            $user->update([
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'email' => $request->email,
             ]);
-        }
+
+            // Cek apakah wilayah berubah
+            $areaChanged = $motherProfile->area_id != $request->integer('area_id');
+
+            // Update mother profile
+            $motherProfile->update([
+                'birth_date' => $request->birth_date,
+                'address' => $request->address,
+                'subdistrict_id' => $request->integer('subdistrict_id'),
+                'area_id' => $request->integer('area_id'),
+                'rt' => $request->rt,
+            ]);
+
+            // Kalau wilayah berubah, reassign bidan
+            if ($areaChanged) {
+                $midwifeArea = MidwifeArea::where('area_id', $request->integer('area_id'))
+                    ->where('is_active', true)
+                    ->first();
+
+                $motherProfile->update([
+                    'assigned_midwife_id' => $midwifeArea?->midwife_id,
+                ]);
+            }
+        });
 
         return redirect()->route('mother.setting')
             ->with('success', 'Profil berhasil diperbarui.');
@@ -102,7 +110,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'old_password' => ['required'],
-            'password' => ['required', 'confirmed', Password::min(6)],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ], [
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);

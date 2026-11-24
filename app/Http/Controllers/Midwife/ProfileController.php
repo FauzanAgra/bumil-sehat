@@ -76,7 +76,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::defaults()->mixedCase()->numbers()],
         ]);
 
         if (! Hash::check($request->current_password, $user->password)) {

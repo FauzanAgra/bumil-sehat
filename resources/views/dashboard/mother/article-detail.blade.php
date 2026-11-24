@@ -57,7 +57,7 @@
         prose-headings:text-gray-800 prose-headings:font-bold
         prose-p:text-gray-700 prose-p:leading-relaxed
         prose-li:text-gray-700 prose-ul:marker:text-rose-400">
-            {!! $article->content !!}
+            {!! $article->sanitized_content !!}
         </section>
 
         {{-- Info box --}}

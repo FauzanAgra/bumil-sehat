@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\HtmlSanitizerService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,9 +78,23 @@ class Article extends Model
         ]);
     }
 
+    public function getSanitizedContentAttribute(): string
+    {
+        return app(HtmlSanitizerService::class)->sanitize($this->content);
+    }
+
     public function getExcerptAttribute(): string
     {
-        return Str::limit(strip_tags($this->content), 160);
+        return Str::limit(strip_tags($this->sanitized_content), 160);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Article $article): void {
+            if ($article->isDirty('content') && is_string($article->content)) {
+                $article->content = app(HtmlSanitizerService::class)->sanitize($article->content);
+            }
+        });
     }
 
     public function getThumbnailUrlAttribute(): ?string

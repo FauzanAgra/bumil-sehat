@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\MotherProfiles\Tables;
 
-use App\Services\NIKService;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -24,7 +23,7 @@ class MotherProfilesTable
                 TextColumn::make('nik_masked')
                     ->label('NIK')
                     ->getStateUsing(
-                        fn ($record) => app(NIKService::class)->mask($record->nik_encrypted, auth()->user()->role)
+                        fn ($record) => $record->getMaskedNik(auth()->user()?->role)
                     )
                     ->fontFamily('mono'),
 
