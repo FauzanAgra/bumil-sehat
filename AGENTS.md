@@ -1,245 +1,193 @@
 # AGENTS.md
 
-## 1. Role and Objective
+Panduan tata kelola repositori untuk semua asisten AI coding (Antigravity, Claude Code, Codex, Cursor, Copilot, Windsurf, Aider, dll.) dan kontributor di proyek **BumilSehat**.
 
-Act as a pragmatic software engineer. Prioritize correctness, security, maintainability, readability, and consistency with the existing codebase.
+---
 
-Deliver the smallest complete solution that satisfies the requirements. Avoid unnecessary complexity, speculative abstractions, and unrelated changes.
+## 1. Role, Objective & Project Context
 
-Treat security, data integrity, and verification as essential parts of implementation correctness.
+Act as a pragmatic software engineer. Prioritize correctness, security, maintainability, readability, and consistency with the existing codebase and approved blueprint.
 
-## 2. Stack and Entry Points
+Deliver the smallest complete solution that satisfies the approved requirements. Avoid unnecessary complexity, speculative abstractions, and unrelated changes. Treat security, data integrity, and verification as essential parts of implementation correctness.
 
-- Laravel 12 / PHP 8.2 with Blade, Tailwind CSS 4, Vite, and a Filament 5 admin panel at `/admin`; do not rely on the stale Laravel 11 / Filament 3 versions in `README.md`.
-- Browser routes and role-specific flows are centralized in `routes/web.php`; middleware aliases (`role`, custom `guest`) are registered in `bootstrap/app.php`.
-- User-facing controllers/views are split by role under `app/Http/Controllers/{Mother,Midwife,Doctor}` and `resources/views/dashboard/{mother,midwife,doctor}`. Admin CRUD is auto-discovered from `app/Filament/Resources` by `app/Providers/Filament/AdminPanelProvider.php`.
-- Frontend build inputs are only `resources/css/app.css` and `resources/js/app.js`; Tailwind source scanning is configured in `resources/css/app.css`.
+### Project Purpose
+**BumilSehat** adalah aplikasi web pemantauan kehamilan berbasis **Single-Puskesmas** yang mendigitalisasi pencatatan Antenatal Care (ANC 1–6), deteksi dini faktor risiko (KEK, Preeklampsia, Anemia), pemantauan konsumsi Tablet Tambah Darah (TTD), edukasi artikel kehamilan, dan perlindungan NIK sesuai **UU PDP**.
+
+### Required Blueprint Reading List
+Sebelum merancang perubahan, menulis fitur, atau memperbaiki bug, baca dokumen blueprint relevan yang menjadi *single source of truth*:
+
+| Dokumen | Fungsi |
+| --- | --- |
+| [`docs/PRD.md`](docs/PRD.md) | Kebutuhan produk, aturan bisnis, rumus klinis, hak akses peran, & acceptance criteria |
+| [`docs/ERD.md`](docs/ERD.md) | Skema 17 tabel domain, data dictionary, relasi, index, & aturan integritas data |
+| [`docs/TECH_SPEC.md`](docs/TECH_SPEC.md) | Arsitektur sistem, stack resmi, keamanan, transaksi, testing, & deployment |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | Bahasa visual, palet warna peran (Rose/Blue), tipografi `Poppins`, & pola komponen |
+| [`docs/TASKS.md`](docs/TASKS.md) | Papan tugas resmi (Wave 1 & Wave 2) dan status progres aktual |
+| [`docs/adr/README.md`](docs/adr/README.md) | Catatan keputusan arsitektur (ADR-0001 s.d. ADR-0005+) |
+
+> **Catatan Audit Lokal**: Jika tersedia di lingkungan lokal, [`docs/temp/security-audit-issues.md`](docs/temp/security-audit-issues.md) (berada di folder lokal `/docs/temp` ter-gitignore) memuat detail teknis temuan keamanan yang dipetakan ke Wave 2 di `docs/TASKS.md`.
+
+---
+
+## 2. Tech Stack Integrity & Entry Points
+
+### Approved Stack
+- **Backend**: PHP `^8.2`, **Laravel 12** (`laravel/framework: ^12.0`), **Filament 5** (`filament/filament: ^5.0`) di `/admin`.
+- **Runtime**: **Laravel Octane (`^2.20`) + FrankenPHP** di belakang reverse proxy HTTPS ([ADR-0004](docs/adr/0004-runtime-octane-and-atomic-ttd-activation.md)).
+- **Database**: **PostgreSQL** untuk development & production; **SQLite in-memory** khusus untuk PHPUnit ([ADR-0001](docs/adr/0001-database-selection.md)).
+- **Frontend**: Blade SSR, **Tailwind CSS v4** (`@tailwindcss/vite`), `@tailwindcss/typography`, Vite 7, Axios, Font Awesome 6.
+- **Tooling**: Laravel Pint (`vendor/bin/pint`), PHPUnit 11 (`composer test`).
+
+> **Stack Guardrail**: Jangan mengganti framework, menaikkan major version, mengganti DBMS target, atau memasang/menghapus dependensi Composer/npm tanpa persetujuan eksplisit pengguna dan pembaruan `docs/TECH_SPEC.md` (+ ADR bila relevan).
+
+### Key Entry Points
+- Browser routes dan alur per peran terpusat di `routes/web.php`; middleware aliases (`role`, custom `guest`) terdaftar di `bootstrap/app.php`; service provider terdaftar di `bootstrap/providers.php`.
+- User-facing controllers & views dipisah per role di `app/Http/Controllers/{Auth,Mother,Midwife,Doctor}` dan `resources/views/{auth,dashboard/{mother,midwife,doctor}}`.
+- Admin CRUD & view di-auto-discover dari `app/Filament/Resources` oleh `app/Providers/Filament/AdminPanelProvider.php` dan dibatasi lewat `User::canAccessPanel()` (`FilamentUser`).
+- Frontend build inputs hanya `resources/css/app.css` dan `resources/js/app.js`; pemindaian `@source` Tailwind dikonfigurasi di `resources/css/app.css`.
 
 Always verify the actual implementation and installed dependencies when a task depends on details that may have changed.
 
-## 3. Understand the Project First
+---
+
+## 3. Database Schema Compliance
+
+- Ikuti [`docs/ERD.md`](docs/ERD.md) secara ketat sebagai acuan skema database.
+- Jangan mengarang tabel, kolom, enum, atau relasi baru tanpa dasar kebutuhan di `docs/PRD.md` dan persetujuan pengguna.
+- Setiap perubahan skema wajib melalui migrasi Laravel yang kompatibel dengan **PostgreSQL** (runtime utama) sekaligus **SQLite** (PHPUnit), menjaga *referential integrity* (`CASCADE`/`RESTRICT`/`SET NULL`), serta memperbarui `docs/ERD.md` terlebih dahulu atau bersamaan setelah disetujui.
+- Gunakan `Illuminate\Database\UniqueConstraintViolationException` untuk menangani pelanggaran *unique constraint* lintas DBMS; hindari pengecekan kode error spesifik vendor (seperti MySQL `1062`).
+- Jangan menjalankan operasi database destruktif tanpa otorisasi eksplisit.
+
+---
+
+## 4. Understand the Project First, Planning & Scope Guardrails
 
 Before making changes:
+- Baca `AGENTS.md`, cek task relevan di `docs/TASKS.md`, dan baca bagian terkait dari `docs/PRD.md`, `docs/ERD.md`, `docs/TECH_SPEC.md`, atau `docs/DESIGN.md`.
+- Periksa file terkait, dependensi, efek samping, implikasi keamanan, dan risiko regresi. Jangan membaca seluruh repositori tanpa kebutuhan.
+- Tanyakan klarifikasi jika ambiguitas dapat mengubah implementasi secara material.
 
-- Read this file and inspect applicable instructions in relevant directories.
-- Inspect the repository structure and identify the files related to the task.
-- Review existing implementations, dependency manifests, lockfiles, configuration, and tests where relevant.
-- Follow established naming conventions, coding standards, and architectural patterns.
-- Identify dependencies, side effects, security implications, and regression risks.
-- Ask for clarification when ambiguity could materially change the implementation.
+### Scope Guardrails
+- Implementasikan **hanya** kebutuhan yang sudah disetujui di `docs/PRD.md` / `docs/TASKS.md` atau diminta eksplisit oleh pengguna.
+- Jangan menambahkan fitur spekulatif di luar scope (lihat `Out of Scope` di `docs/PRD.md`) dan jangan me-refactor kode yang tidak terkait kecuali diperlukan demi keamanan/kebenaran perbaikan.
+- Untuk tugas kompleks atau lintas modul: ringkas kebutuhan → identifikasi file/dampak → pertimbangkan edge case & keamanan → susun rencana ringkas → eksekusi bertahap → verifikasi penuh.
 
-Do not assume a framework version, installed dependency, API, or project convention without evidence when it matters.
+---
 
-Do not read the entire repository unnecessarily. Focus on the files and dependencies relevant to the task.
+## 5. Architecture, Service Layer & Coding Standards
 
-## 4. Planning and Execution
+- Pertahankan arsitektur role-scoped controllers yang ringkas (*skinny controllers*): gunakan **Form Request** untuk validasi kompleks + otorisasi, manfaatkan service terfokus (`app/Services/NIKService.php`, dst.) untuk logika domain/kriptografi/perhitungan kompleks, dan gunakan `DB::transaction()` + `lockForUpdate()` untuk mutasi multi-langkah atau rawan *race condition*.
+- Hindari membuat lapisan repository, interface, trait, atau service abstrak hanya demi pola (*pattern-for-pattern's sake*).
+- Jaga kode tetap **Octane-safe**: jangan menyimpan mutable request/user state pada properti statis atau singleton container.
+- Ikuti idiom PHP 8.2+ & Laravel 12 yang konsisten dengan codebase, gunakan nama simbol yang bermakna, tangani error secara eksplisit tanpa menelan exception diam-diam, dan tambahkan komentar hanya untuk menjelaskan keputusan non-obvious.
+- Jaga kompatibilitas ke belakang kecuali perubahan pemecah (*breaking change*) diminta eksplisit.
 
-For small, clearly defined tasks, proceed directly with implementation.
+---
 
-For complex tasks, architectural changes, or changes spanning multiple modules:
+## 6. BumilSehat Domain Constraints
 
-1. Summarize the requirements and expected behavior.
-2. Identify the affected files, components, and dependencies.
-3. Consider edge cases, security implications, and regression risks.
-4. Develop a concise implementation plan.
-5. Implement the solution in manageable steps.
-6. Verify the changes and report the results.
+Aturan domain berikut bersifat wajib dan tidak boleh dilanggar kecuali ada perubahan domain yang disetujui eksplisit beserta pembaruan PRD/ADR:
 
-Keep changes within the requested scope. Do not refactor unrelated code unless necessary to solve the problem safely.
+### NIK Protection (UU PDP — [ADR-0002](docs/adr/0002-nik-encryption-and-audit-trail.md))
+- NIK tidak boleh pernah disimpan atau di-query dalam bentuk plaintext (baik di DB, session, old input, maupun log).
+- Gunakan `NIKService`, `HasNIKEncryption`, dan `MotherProfile::byNik()` untuk seluruh penanganan NIK.
+- Kolom tersimpan adalah `nik_encrypted` (AES-256-CBC) dan `nik_hash` (HMAC-SHA256); keduanya tetap berada di `$hidden`.
+- Gunakan helper model `getMaskedNik()` / `getDecryptedNik()` di seluruh jalur tampilan (Blade & Filament) agar audit log `nik_audit_logs` dan otorisasi role selalu berjalan.
+- `NIK_HASH_SALT` dan `APP_KEY` wajib dipertahankan permanen setelah data ada; mengubahnya memutus pencarian dan dekripsi NIK existing.
+- `NikAuditLog` bersifat *immutable* (menolak update, delete, dan drop table di production).
 
-If a simpler solution satisfies the requirements without sacrificing security or maintainability, prefer it over unnecessary abstraction.
+### Role Authorization ([ADR-0003](docs/adr/0003-role-authorization-and-authentication.md))
+- Tenaga medis (`midwife`, `doctor`) wajib terverifikasi (`is_verified = true`) pada `EnsureRole`; peran `mother` tidak memerlukan verifikasi manual.
+- Akses `/admin` (Filament 5) wajib terbatas pada `role === 'admin'` melalui kontrak `FilamentUser::canAccessPanel()`.
+- Pertahankan middleware role dan pemeriksaan kepemilikan (*ownership* / anti-IDOR) di setiap layar & endpoint baru. Jangan pernah mematikan kontrol otorisasi demi memudahkan testing.
+- Cakupan supervisi `doctor` adalah *read-only* Single-Puskesmas (seluruh ibu dengan kehamilan aktif, NIK ter-mask 4 digit).
 
-## 5. Coding Standards
+### ANC Validation, Risk Detection & Atomic TTD Activation ([ADR-0004](docs/adr/0004-runtime-octane-and-atomic-ttd-activation.md))
+- Ambang deteksi risiko otomatis pada `AncRecord`: **KEK** (`lila < 23.5` cm), **Preeklampsia** (`systolic >= 140` atau `diastolic >= 90` mmHg), **Anemia** (`hb < 11.0` g/dL). Kondisi `confirmed`/`rejected` oleh Bidan bersifat final dan tidak boleh di-override oleh deteksi ulang.
+- Catatan ANC yang sudah dikunci (`is_locked = true`) bersifat permanen (tidak dapat diubah/dihapus).
+- Validasi ANC men-dispatch `AncValidationCreated`, yang listener-nya (`AutoActivateTtdOnValidation`) mengaktifkan TTD secara sinkron & atomik untuk kehamilan terkait (`ancRecord->schedule->pregnancy`) yang aktif pada usia kehamilan ≥ 10 minggu.
+- Pertahankan alur event/listener tersebut; jangan menduplikasi logika aktivasi TTD di controller lain.
 
-- Follow the conventions and formatting already established by the project.
-- Prefer readable, explicit code over clever or unnecessarily compact solutions.
-- Follow established PHP, Laravel, JavaScript, and frontend framework idioms where applicable.
-- Use meaningful names for variables, functions, classes, and modules.
-- Keep responsibilities focused and interfaces understandable.
-- Avoid duplicated logic when a clear, maintainable shared implementation is justified.
-- Avoid premature abstraction, unnecessary design patterns, and speculative generalization.
-- Handle errors explicitly and preserve useful diagnostic information.
-- Avoid silently swallowing exceptions or failures.
-- Add comments to explain non-obvious decisions rather than restating the code.
-- Preserve backward compatibility unless a breaking change is explicitly required.
-- Do not rewrite working code merely to match personal stylistic preferences.
+### Database Seeding
+- Urutan seeder di `DatabaseSeeder` bersifat deterministik dan wajib dijaga: Admin → `SpecializationSeeder` & `SubdistrictSeeder` → `MedicalStaffSeeder` → `MotherSeeder`.
+- `NIK_HASH_SALT` wajib terisi sebelum menjalankan `MotherSeeder`.
 
-## 6. Architecture and Dependencies
-
-- Respect the existing architecture unless the task requires a justified change.
-- Reuse existing utilities, components, libraries, and services where appropriate.
-- Introduce new dependencies only when they provide clear value.
-- Verify compatibility with the installed framework and dependency versions before adding or upgrading packages.
-- Explain meaningful architectural trade-offs when multiple solutions are viable.
-- Separate business rules, data access, presentation, and infrastructure responsibilities appropriately without introducing unnecessary layers.
-- Avoid creating service classes, repository classes, interfaces, traits, or other abstractions solely to follow a pattern.
-- Prefer existing project conventions unless there is a concrete reason to change them.
-
-Do not install, remove, upgrade, or replace dependencies without a clear task-related reason.
+---
 
 ## 7. Security and Data Integrity
 
-Treat security as a requirement, not an optional improvement.
+Treat security as a core requirement, not an optional polish:
+- Validasi seluruh input tidak tepercaya di batas aplikasi (termasuk relasi antar-entitas seperti `area_id` terhadap `subdistrict_id`, kelayakan jadwal ANC, dan aturan USG wajib ANC 1 & 5).
+- Tegakkan autentikasi, regenerasi session ID pasca login/registrasi, otorisasi role, dan pencegahan IDOR pada seluruh operasi terlindungi.
+- Gunakan query berparameter / Eloquent ORM aman; hindari raw SQL tanpa binding dan batasi mass-assignment (`$fillable`).
+- Jangan pernah mengekspose secret, kredensial, token, atau NIK plaintext pada log, pesan error, session unencrypted, atau respons tidak berwenang.
+- Terapkan output encoding / sanitasi HTML allowlist untuk konten rich text (seperti artikel) untuk mencegah Stored XSS.
+- Gunakan transaksi database dan *pessimistic locking* (`lockForUpdate`) untuk mencegah *race condition*, pengiriman ganda, dan penulisan parsial.
 
-- Validate untrusted input at appropriate application boundaries.
-- Enforce authentication and authorization on protected operations.
-- Prevent unauthorized access to another user's or role's resources, including IDOR vulnerabilities.
-- Use parameterized queries or safe ORM/query-builder APIs.
-- Protect sensitive data and never expose secrets, credentials, or private tokens.
-- Never store passwords in plaintext.
-- Apply appropriate output encoding and protections against injection attacks.
-- Use database transactions when required to preserve consistency across related operations.
-- Consider race conditions, duplicate submissions, and concurrent updates where relevant.
-- Avoid logging passwords, tokens, or unnecessary personal data.
-- Preserve existing security controls and authorization boundaries when modifying features.
+---
 
-Never disable security controls to make implementation or testing easier.
+## 8. Frontend, Design System & UX
 
-Never run destructive database operations, overwrite important data, expose secrets, or perform irreversible actions without explicit authorization.
+- Ikuti token warna, tipografi `Poppins`, layout mobile-first `max-w-md` (tema Rose untuk Mother/Midwife/Admin, Blue untuk Doctor), dan pola komponen di [`docs/DESIGN.md`](docs/DESIGN.md).
+- Gunakan HTML semantik, jaga aksesibilitas keyboard (`focus:ring-*`) dan `aria-label` untuk tombol ikon, serta sediakan state *loading*, *empty*, *error*, dan *success* yang jelas.
+- Hindari dependensi UI baru yang tidak perlu dan animasi berlebihan.
+- Pastikan seluruh perubahan frontend tetap kompatibel dengan pipeline build Vite (`npm run build`).
 
-## 8. BumilSehat Domain Constraints
+---
 
-These constraints are specific to this application and must be preserved unless a task explicitly requires a carefully considered domain change.
+## 9. Task Board Maintenance & Documentation Synchronization
 
-### NIK Protection
+### Pemeliharaan `docs/TASKS.md`
+- Selalu baca [`docs/TASKS.md`](docs/TASKS.md) sebelum mulai mengeksekusi task Wave 2 atau fitur baru.
+- Ubah status task ke `[~]` saat mulai dikerjakan, dan ke `[x]` beserta tanggal penyelesaian (`YYYY-MM-DD`) **hanya setelah** kode dan verifikasi/test benar-benar lulus.
+- Setiap kali status task berubah, **hitung ulang dan perbarui** seluruh angka pada seksi `Progress Overview` (Completed, In Progress, Blocked, Pending, dan persentase).
 
-- NIK must never be stored or queried as plaintext.
-- Use `NIKService`, `HasNIKEncryption`, and `MotherProfile::byNik()` for the established NIK handling flow.
-- Persisted fields are encrypted `nik_encrypted` plus HMAC `nik_hash`.
-- Use model masking and access helpers so audit logging and role authorization apply.
-- `NIK_HASH_SALT` is required and must remain unchanged once records exist, or existing NIK hashes cannot be found.
-- `APP_KEY` must also be retained to decrypt existing NIK ciphertext.
-- Never expose decrypted NIK values in logs, error messages, or unauthorized responses.
+### Documentation Synchronization
+- Setiap perubahan arsitektur, skema database, kebutuhan bisnis, atau token desain yang disetujui wajib disinkronkan ke seluruh dokumen blueprint terdampak (`docs/PRD.md`, `docs/ERD.md`, `docs/TECH_SPEC.md`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/adr/`, `README.md`) tanpa menyentuh file yang tidak relevan.
 
-### Role Authorization
+---
 
-- Medical users (`midwife`, `doctor`) require verification in `EnsureRole`; mother users do not.
-- Preserve route role middleware when adding role-scoped screens.
-- Do not bypass existing authentication, verification, or authorization requirements to make a feature work.
+## 10. Commands, Testing & Verification
 
-### ANC Validation and TTD Activation
+### Development & Build Commands
+- Setup awal (jangan jalankan membabi-buta di environment existing): `composer run setup`.
+- Dev stack lokal: `composer run dev` (server, queue listener, Pail logs, Vite) atau Octane `php artisan octane:start --server=frankenphp`.
+- Asset dev / build produksi: `npm run dev` / `npm run build`.
 
-- ANC validation dispatches `AncValidationCreated`, whose listener activates TTD for active pregnancies at gestational week 10+.
-- Preserve the existing event/listener flow when changing ANC validation or TTD behavior.
-- Avoid introducing duplicate activation logic in controllers or other unrelated components.
-- Consider transaction boundaries, repeated events, and concurrent operations when modifying this flow.
+### Formatting & Testing
+- Format PHP: `vendor/bin/pint`.
+- Jalankan seluruh test: `composer test` (membersihkan config cache lebih dulu) atau `php artisan test`.
+- Fokus test tertentu: `php artisan test --filter=TestName` atau `php artisan test tests/Feature/SomeTest.php`.
+- Catatan: PHPUnit memakai SQLite in-memory, array cache/session, dan queue `sync`; test yang memakai `NIKService` tetap membutuhkan `NIK_HASH_SALT` non-empty.
 
-### Database Seeding
+### Verification Rules
+- Tambahkan atau perbarui automated tests (Unit & Feature) untuk setiap fitur baru, perbaikan bug, batas otorisasi, dan perbaikan keamanan; jangan pernah menghapus atau melemahkan test yang gagal agar tampak lulus.
+- Untuk perubahan PHP: jalankan `vendor/bin/pint` diikuti test relevan. Untuk perubahan frontend: jalankan `npm run build`.
+- Jangan pernah melaporkan perintah sebagai berhasil kecuali benar-benar dijalankan dan lulus; jika ada yang belum dapat diverifikasi, jelaskan alasannya secara jujur.
 
-- Seeder order is intentional: specializations and subdistricts precede medical staff, then mother demo data.
-- Preserve dependency order in `DatabaseSeeder`.
-- Do not reorder seeders without verifying their dependencies and the effects on existing setup workflows.
+---
 
-## 9. Framework and Technology Awareness
+## 11. Git & Conventional Commits Standards
 
-Use the framework, language, and tooling versions declared by the project.
+- Periksa `git status` dan working tree sebelum melakukan perubahan; jaga perubahan pengguna yang belum di-commit dan jangan pernah me-revert perubahan yang tidak terkait.
+- Jangan membuat commit, push, deploy, atau mengubah riwayat Git kecuali diminta eksplisit oleh pengguna.
+- Hormati `.gitignore`: jangan pernah meng-commit `.env`, `public/build`, `vendor`, `node_modules`, binary `frankenphp`, folder lokal `/docs/temp`, atau `.agents`.
+- Saat membuat commit (atas permintaan pengguna), gunakan **Conventional Commits v1.2.0** dengan format scoped:
+  - Format: `<type>(<scope>): <subject>` (imperative mood, lowercase subject, tanpa titik akhir, maks 72 karakter, tanpa ticket ID di subject).
+  - Contoh:
+    - `fix(ttd): register EventServiceProvider for auto TTD activation`
+    - `fix(security): encrypt NIK before storing in registration session`
+    - `test(anc): add concurrency and schedule eligibility feature tests`
+    - `docs(blueprint): add PRD, ERD, TECH_SPEC, TASKS, DESIGN, and ADRs`
+    - `chore(deps): run composer and npm security audit`
+  - **Atomic Commits**: Setiap commit fokus pada satu task logis dan menyertakan pembaruan status pada `docs/TASKS.md` dalam commit yang sama.
 
-For framework-specific tasks:
+---
 
-- Follow official conventions compatible with the installed version.
-- Prefer existing project patterns when they remain appropriate and secure.
-- Verify version-sensitive APIs against available documentation or installed source when necessary.
-- Avoid introducing APIs, configuration options, or dependencies that are incompatible with the project.
-- Do not rely on outdated documentation when it conflicts with the installed versions.
+## 12. Completion Report
 
-Do not apply framework-specific rules to unrelated technologies or assume that an API exists without checking when compatibility matters.
-
-## 10. Frontend and User Experience
-
-When working on frontend code:
-
-- Follow the existing design system, component structure, and styling conventions.
-- Reuse components where doing so improves consistency.
-- Support responsive layouts and accessible interactions.
-- Use semantic HTML and maintain keyboard accessibility.
-- Provide appropriate loading, empty, error, and success states where relevant.
-- Avoid unnecessary dependencies, excessive animation, and decorative complexity.
-- Consider the product's purpose and audience rather than relying on generic visual patterns.
-- Preserve existing functionality while improving presentation or usability.
-- Ensure that frontend changes remain compatible with the configured build pipeline.
-
-Treat visual quality, usability, and accessibility as part of implementation correctness.
-
-## 11. Commands and Development Workflow
-
-### Setup
-
-- First-time setup: `composer run setup`; it creates `.env` when absent, generates `APP_KEY`, runs migrations, installs npm packages, and builds assets.
-- Set `NIK_HASH_SALT` before seeding any mother data.
-- Full local stack: `composer run dev` (Laravel server, queue listener, Pail logs, and Vite).
-- Asset-only development: `npm run dev`.
-- Production assets: `npm run build`.
-
-Do not run setup or initialization commands blindly in an existing environment. Inspect their side effects first, especially when they may modify environment files, database contents, or dependencies.
-
-### Formatting and Testing
-
-- Format PHP with `vendor/bin/pint`.
-- Run all tests with `composer test` (clears config first) or `php artisan test`.
-- Focus tests with `php artisan test --filter=TestName` or `php artisan test tests/Feature/SomeTest.php`.
-- PHPUnit forces SQLite in-memory, array cache/session, and synchronous queues.
-- Tests that resolve `NIKService` still need a non-empty `NIK_HASH_SALT` available in the environment.
-
-There is no configured lint/typecheck or CI workflow. For PHP changes, run `vendor/bin/pint` followed by relevant tests. For frontend changes, run `npm run build`.
-
-Before running a command, confirm that it is appropriate for the task and current environment. Do not claim a command passed unless it actually ran successfully.
-
-## 12. Testing and Verification
-
-Before changing code, identify relevant existing tests and verification commands.
-
-After implementation:
-
-- Add or update tests for new functionality, bug fixes, and important edge cases.
-- Run focused tests for the changed behavior.
-- Run relevant formatting, static analysis, type checking, or build commands when available and appropriate.
-- Check for regressions in related functionality.
-- Verify authorization and validation behavior for security-sensitive changes.
-- Inspect the final diff for unintended changes.
-
-For database-related changes, consider data integrity, transaction behavior, duplicate records, and concurrent updates where relevant.
-
-For frontend changes, verify the production build and any relevant application behavior.
-
-If a command fails, investigate the cause and distinguish implementation failures from environment or infrastructure issues.
-
-If verification cannot be completed, explain what remains unverified and why. Never report unexecuted checks as successful.
-
-## 13. Tool and Command Discipline
-
-- Prefer existing project scripts and documented commands.
-- Use the project's established package manager and lockfile.
-- Inspect the potential impact of risky operations before executing them.
-- Avoid unnecessary file reads, repeated searches, and unrelated tool calls.
-- Do not modify generated files or environment configuration unless the task requires it.
-- Do not change Git history, discard user changes, or overwrite unrelated work.
-- Do not commit, push, deploy, or publish changes unless explicitly requested.
-- Ask for authorization before irreversible or destructive actions.
-
-Use available tools to gather evidence rather than guessing. If a tool or external resource is unavailable, state the limitation instead of inventing results.
-
-## 14. Git and Change Management
-
-- Inspect the working tree before making changes when Git is available.
-- Preserve existing user modifications.
-- Keep changes focused and reviewable.
-- Do not revert unrelated changes or assume the working tree is clean.
-- Review the final diff for accidental edits, debug statements, temporary files, and exposed secrets.
-- Do not create commits unless requested.
-
-Repository-specific ignore rules must be respected.
-
-For this repository, `.env`, generated Vite assets (`public/build`), storage links, `vendor`, and `node_modules` are ignored; never commit secrets or generated local artifacts.
-
-## 15. Completion Report
-
-When finishing a task, provide a concise report containing:
-
-1. What was implemented or fixed.
-2. The important files or components changed.
-3. The tests and checks executed, including their actual results.
-4. Any unresolved issues, limitations, or risks.
-
-Clearly distinguish verified behavior from assumptions and unverified outcomes.
-
-Do not report a task as fully complete when important requirements remain unmet.
+Saat menyelesaikan tugas, berikan laporan singkat yang memuat:
+1. Apa yang diimplementasikan atau diperbaiki.
+2. File atau komponen penting yang berubah.
+3. Perintah test, format, dan build yang benar-benar dijalankan beserta hasil aktualnya.
+4. Isu yang belum selesai, batasan, atau risiko tersisa (bedakan tegas antara hasil terverifikasi dan hal yang belum diverifikasi).
