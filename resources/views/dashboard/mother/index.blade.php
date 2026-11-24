@@ -192,7 +192,7 @@
                         @endif
                     </div>
                 </div>
-            @else
+            @elseif ($gestationalWeek !== null && $gestationalWeek < 10)
                 <div class="bg-blue-50 px-4 py-5 space-y-3 rounded-4xl">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -214,6 +214,56 @@
                             Rutin TTD dimulai saat ≥ 10 minggu
                         </span>
                     </div>
+                </div>
+            @elseif ($ttdStatus && ! $ttdStatus->is_active)
+                <div class="bg-gray-50 border border-gray-200 px-4 py-5 space-y-3 rounded-4xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gray-200 flex items-center justify-center">
+                            <i class="fa-solid fa-pills text-gray-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Usia Kehamilan {{ $gestationalWeek }} Minggu</p>
+                            <p class="text-xs text-gray-500">Trimester {{ $trimester }}</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 leading-relaxed text-center">
+                        Pemantauan tablet tambah darah saat ini <b>sedang dinonaktifkan oleh Bidan</b>.
+                        Hubungi Bidan pendamping jika Bunda memiliki pertanyaan.
+                    </p>
+                    <div class="text-center">
+                        <span
+                            class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-white px-3 py-1 rounded-full border border-gray-200">
+                            <i class="fa-solid fa-pause"></i>
+                            Dinonaktifkan oleh Bidan
+                        </span>
+                    </div>
+                </div>
+            @elseif ($pregnancy)
+                <div class="bg-rose-50 border border-rose-100 px-4 py-5 space-y-3 rounded-4xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                            <i class="fa-solid fa-pills text-rose-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Usia Kehamilan {{ $gestationalWeek }} Minggu</p>
+                            <p class="text-xs text-gray-500">Trimester {{ $trimester }}</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 leading-relaxed text-center">
+                        Pemantauan tablet tambah darah akan <b>aktif otomatis</b> setelah kunjungan ANC Bunda
+                        divalidasi oleh Bidan.
+                    </p>
+                    <div class="text-center">
+                        <span
+                            class="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 bg-white px-3 py-1 rounded-full">
+                            <i class="fa-solid fa-user-nurse"></i>
+                            Menunggu validasi ANC Bidan
+                        </span>
+                    </div>
+                </div>
+            @else
+                <div class="bg-gray-50 px-4 py-5 rounded-4xl text-center">
+                    <p class="text-xs text-gray-500">Belum ada kehamilan aktif untuk pemantauan TTD.</p>
                 </div>
             @endif
         </section>
@@ -252,10 +302,10 @@
                                 <span>{{ $nextSchedule->note }}</span>
                             </p>
                         @endif
-                        @if ($nextSchedule->scheduled_time)
+                        @if ($nextSchedule->schedule_time)
                             <p class="text-xs flex items-center gap-1 opacity-90">
                                 <i class="fa-regular fa-clock text-[11px]"></i>
-                                <span>{{ Carbon\Carbon::parse($nextSchedule->scheduled_time)->format('H:i') }} WIB</span>
+                                <span>{{ Carbon\Carbon::parse($nextSchedule->schedule_time)->format('H:i') }} WIB</span>
                             </p>
                         @endif
                         <p class="text-xs flex items-center gap-1 opacity-90" id="scheduleTimeLabel">
