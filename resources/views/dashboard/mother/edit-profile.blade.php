@@ -123,7 +123,7 @@
                                 class="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400">
                                 <i class="fa-solid fa-map-pin text-xs"></i>
                             </div>
-                            <select name="subdistrict_id" id="subdistrict_id" onchange="handleWilayahChange()"
+                            <select name="subdistrict_id" id="subdistrict_id" required onchange="handleSubdistrictChange()"
                                 class="w-full pl-14 pr-4 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition appearance-none">
                                 @foreach ($subdistricts as $s)
                                     <option value="{{ $s->id }}"
@@ -138,7 +138,7 @@
                     <div class="flex gap-3">
                         <div class="flex-1 space-y-1.5">
                             <label class="text-xs font-bold text-gray-500 px-1">RW</label>
-                            <select name="area_id" id="area_id" onchange="handleWilayahChange()"
+                            <select name="area_id" id="area_id" required onchange="handleWilayahChange()"
                                 class="w-full px-4 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-200 transition">
                                 @foreach ($areas as $area)
                                     <option value="{{ $area->id }}" data-subdistrict="{{ $area->subdistrict_id }}"
@@ -194,11 +194,44 @@
     <script>
         const initialSubdistrict = "{{ $motherProfile?->subdistrict_id }}";
         const initialArea = "{{ $motherProfile?->area_id }}";
-        const allAreaOptions = Array.from(document.getElementById('area_id').options);
+        const subdistrictSelect = document.getElementById('subdistrict_id');
+        const areaSelect = document.getElementById('area_id');
+        const allAreaOptions = Array.from(areaSelect.options).filter(option => option.value !== '');
+
+        function filterAreasForSubdistrict(subdistrictId, selectedAreaId = '') {
+            const subId = String(subdistrictId || '');
+            const filtered = subId
+                ? allAreaOptions.filter(option => option.dataset.subdistrict === subId)
+                : [];
+
+            areaSelect.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = !subId
+                ? 'Pilih Kelurahan dulu'
+                : (filtered.length === 0 ? 'Belum ada RW' : 'Pilih RW');
+            areaSelect.appendChild(placeholder);
+
+            filtered.forEach(option => {
+                const clone = option.cloneNode(true);
+                clone.selected = String(selectedAreaId) === option.value;
+                areaSelect.appendChild(clone);
+            });
+
+            if (!Array.from(areaSelect.options).some(option => option.selected && option.value !== '')) {
+                areaSelect.value = '';
+            }
+        }
+
+        function handleSubdistrictChange() {
+            filterAreasForSubdistrict(subdistrictSelect.value);
+            handleWilayahChange();
+        }
 
         function handleWilayahChange() {
-            const subdistrictId = document.getElementById('subdistrict_id').value;
-            const areaId = document.getElementById('area_id').value;
+            const subdistrictId = subdistrictSelect.value;
+            const areaId = areaSelect.value;
             const warning = document.getElementById('wilayahWarning');
 
             if (subdistrictId !== initialSubdistrict || areaId !== initialArea) {
@@ -207,5 +240,11 @@
                 warning.classList.add('hidden');
             }
         }
+
+        filterAreasForSubdistrict(
+            subdistrictSelect.value,
+            "{{ old('area_id', $motherProfile?->area_id) }}"
+        );
+        handleWilayahChange();
     </script>
 @endpush

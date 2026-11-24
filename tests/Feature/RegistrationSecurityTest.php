@@ -222,4 +222,64 @@ class RegistrationSecurityTest extends TestCase
             ->assertRedirect(route('mother.profile.password'))
             ->assertSessionHasErrors('password');
     }
+
+    public function test_mother_profile_edit_renders_rw_subdistrict_filter_and_reassigns_midwife_on_valid_relocation(): void
+    {
+        $sub1 = Subdistrict::create(['name' => 'Maju']);
+        $sub2 = Subdistrict::create(['name' => 'Sehat']);
+        $area1 = Area::create(['subdistrict_id' => $sub1->id, 'rw_number' => '01']);
+        $area2 = Area::create(['subdistrict_id' => $sub2->id, 'rw_number' => '02']);
+
+        $midwife1 = User::factory()->create(['phone' => '08340000021', 'role' => 'midwife', 'is_verified' => true]);
+        $midwife2 = User::factory()->create(['phone' => '08340000022', 'role' => 'midwife', 'is_verified' => true]);
+        MidwifeArea::create(['midwife_id' => $midwife1->id, 'area_id' => $area1->id, 'is_active' => true]);
+        MidwifeArea::create(['midwife_id' => $midwife2->id, 'area_id' => $area2->id, 'is_active' => true]);
+
+        $user = User::factory()->create([
+            'phone' => '08340000023',
+            'role' => 'mother',
+            'is_verified' => true,
+            'password' => Hash::make('Password123'),
+        ]);
+        $nikService = app(NIKService::class);
+        MotherProfile::create([
+            'user_id' => $user->id,
+            'nik_encrypted' => $nikService->encrypt('3204015001990026'),
+            'nik_hash' => $nikService->hashNIK('3204015001990026'),
+            'birth_date' => '1998-01-01',
+            'address' => 'Jl. Asal',
+            'subdistrict_id' => $sub1->id,
+            'area_id' => $area1->id,
+            'assigned_midwife_id' => $midwife1->id,
+        ]);
+
+        // Halaman edit profil merender filter RW berbasis Kelurahan
+        $this->actingAs($user)
+            ->get(route('mother.profile.edit'))
+            ->assertOk()
+            ->assertSee('handleSubdistrictChange()', false)
+            ->assertSee('filterAreasForSubdistrict', false)
+            ->assertSee('data-subdistrict="'.$area2->subdistrict_id.'"', false);
+
+        // Pindah ke Kelurahan Sehat RW 02 sukses dan otomatis reassign ke Bidan 2
+        $this->actingAs($user)
+            ->post(route('mother.profile.update'), [
+                'name' => 'Ibu Pindah Wilayah',
+                'phone' => '08340000023',
+                'birth_date' => '1998-01-01',
+                'address' => 'Jl. Tujuan No. 9',
+                'subdistrict_id' => $sub2->id,
+                'area_id' => $area2->id,
+                'rt' => '03',
+            ])
+            ->assertRedirect(route('mother.setting'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('mother_profiles', [
+            'user_id' => $user->id,
+            'subdistrict_id' => $sub2->id,
+            'area_id' => $area2->id,
+            'assigned_midwife_id' => $midwife2->id,
+        ]);
+    }
 }

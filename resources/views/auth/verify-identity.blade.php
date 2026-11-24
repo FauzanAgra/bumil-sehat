@@ -166,11 +166,15 @@
             const subdistrictId = document.getElementById('subdistrict_id').value;
             const areaSelect = document.getElementById('area_id');
 
-            areaSelect.innerHTML = '<option value="">Pilih RW</option>';
             document.getElementById('noBidanAlert').classList.add('hidden');
             document.getElementById('bidanPreview').classList.add('hidden');
 
-            if (!subdistrictId) return;
+            if (!subdistrictId) {
+                areaSelect.innerHTML = '<option value="">Pilih Kelurahan dulu</option>';
+                return;
+            }
+
+            areaSelect.innerHTML = '<option value="">Pilih RW</option>';
 
             const filtered = allAreaOptions.filter(o => o.dataset.subdistrict === subdistrictId);
             filtered.length === 0 ?
@@ -200,7 +204,7 @@
             }
         }
 
-        // Restore old values jika ada validation error
+        // Restore old values jika ada validation error, atau kosongkan RW sebelum Kelurahan dipilih
         const oldSubdistrict = "{{ old('subdistrict_id') }}";
         if (oldSubdistrict) {
             document.getElementById('subdistrict_id').value = oldSubdistrict;
@@ -210,6 +214,8 @@
                 document.getElementById('area_id').value = oldArea;
                 checkMidwife();
             }
+        } else {
+            filterArea();
         }
     </script>
 @endpush
