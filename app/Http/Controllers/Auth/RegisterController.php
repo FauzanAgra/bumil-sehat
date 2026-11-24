@@ -11,7 +11,7 @@ use App\Models\Subdistrict;
 use App\Models\User;
 use App\Services\NIKService;
 use Carbon\Carbon;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -184,14 +184,11 @@ class RegisterController extends Controller
                 'hpl_date' => $hpl,
                 'status' => 'active',
             ]);
-        } catch (QueryException $e) {
-            if ($e->errorInfo[1] === 1062) { // MySQL duplicate entry
-                session()->forget('reg_mother');
+        } catch (UniqueConstraintViolationException) {
+            session()->forget('reg_mother');
 
-                return redirect()->route('register.mother')
-                    ->withErrors(['nik' => 'NIK sudah terdaftar. Silakan ulangi registrasi.']);
-            }
-            throw $e;
+            return redirect()->route('register.mother')
+                ->withErrors(['nik' => 'Nomor HP atau NIK sudah terdaftar. Silakan ulangi registrasi.']);
         }
 
         // Bersihkan session registrasi

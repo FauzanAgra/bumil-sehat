@@ -216,7 +216,7 @@ bumil-sehat/
 │   │   └── Requests/         # Form Requests (StoreAncValidationRequest, dst.)
 │   ├── Listeners/            # AutoActivateTtdOnValidation
 │   ├── Models/               # 17 Eloquent domain models
-│   ├── Providers/            # AppServiceProvider, EventServiceProvider, AdminPanelProvider
+│   ├── Providers/            # AppServiceProvider, AdminPanelProvider
 │   ├── Services/             # NIKService
 │   └── Traits/               # HasNIKEncryption
 ├── docs/                     # PRD, ERD, TECH_SPEC, DESIGN, TASKS, adr/

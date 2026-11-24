@@ -281,7 +281,7 @@ flowchart LR
 - Integrasi Laravel Octane + FrankenPHP & seeder data demo.
 
 ### Wave 2 — Stabilization, Security Hardening & Automated Testing (Aktif Dikerjakan Selanjutnya)
-- Perbaikan 4 bug fungsional kritis (`EventServiceProvider`, redirect `midwife.profile.setting`, redirect `admin`, penanganan error duplikat kompatibel PostgreSQL).
+- Perbaikan 4 temuan fungsional kritis (pembersihan `EventServiceProvider` legacy & verifikasi auto-discovery TTD, redirect `midwife.profile.setting`, redirect `admin`, penanganan error duplikat kompatibel PostgreSQL).
 - Remediasi seluruh isu audit keamanan (`SEC-002` s.d. `SEC-015`, `SEC-RISK-002`, `SEC-RISK-003`).
 - Pembangunan rangkaian Automated Tests PHPUnit (Unit, Feature, dan 9 skenario *Security Test Matrix* `SEC-016`).
 
@@ -328,7 +328,7 @@ Item berikut secara sadar dikeluarkan dari cakupan saat ini dan dicatat sebagai 
 | Perubahan `NIK_HASH_SALT` atau kehilangan `APP_KEY` | Seluruh pencarian `nik_hash` gagal / ciphertext NIK tidak bisa didekripsi | Simpan kunci di secret manager terpisah + dokumentasi larangan rotasi tanpa migrasi ulang. |
 | Race condition antara edit ANC Ibu vs validasi Bidan (`SEC-004`) | Data klinis berubah setelah divalidasi | Transaksi + `lockForUpdate` + guarded update pada Wave 2. |
 | Penyimpanan NIK plaintext di session registrasi (`SEC-002`) | Kebocoran PII jika tabel `sessions` bocor | Enkripsi nilai NIK sebelum masuk session + aktifkan `SESSION_ENCRYPT=true` + hapus `withInput()` untuk NIK (Wave 2). |
-| Event listener `AutoActivateTtdOnValidation` tidak terpanggil | TTD tidak otomatis aktif saat validasi ANC | Daftarkan `EventServiceProvider` dan bungkus konsistensi transaksi (Wave 2). |
+| Duplikasi atau gagalnya eksekusi listener `AutoActivateTtdOnValidation` | TTD gagal aktif atau tereksekusi ganda saat validasi ANC | Gunakan event auto-discovery Laravel 12 (hapus `EventServiceProvider` legacy), tambah test discovery, dan bungkus konsistensi transaksi (Wave 2). |
 | Wilayah RW belum memiliki Bidan aktif | Ibu terdaftar tanpa `assigned_midwife_id` | Admin wajib mapping `midwife_areas` sebelum onboarding; UI menampilkan status informatif. |
 | Ketergantungan CDN eksternal (Google Fonts, Font Awesome Kit, DiceBear) | Ikon/avatar/font gagal muat di jaringan Puskesmas tanpa internet stabil | Terima sebagai risiko MVP; pertimbangkan *self-hosting* aset di iterasi mendatang. |
 

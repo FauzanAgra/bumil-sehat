@@ -87,7 +87,7 @@ bumil-sehat/
 │   │   └── Requests/         # StoreAncValidationRequest (+ FormRequest tambahan Wave 2)
 │   ├── Listeners/            # AutoActivateTtdOnValidation
 │   ├── Models/               # 17 Eloquent domain models
-│   ├── Providers/            # AppServiceProvider, EventServiceProvider, Filament/AdminPanelProvider
+│   ├── Providers/            # AppServiceProvider, Filament/AdminPanelProvider
 │   ├── Services/             # NIKService (singleton)
 │   └── Traits/               # HasNIKEncryption
 ├── bootstrap/
@@ -126,7 +126,7 @@ bumil-sehat/
 4. **Domain Event & Listener Flow**:
    - `Midwife\ValidationController@validate` mengunci record ANC dalam `DB::transaction` dengan `lockForUpdate()`, lalu men-dispatch `AncValidationCreated`.
    - `AutoActivateTtdOnValidation` mengaktifkan TTD jika usia kehamilan ≥ 10 minggu.
-   - **Perbaikan Wave 2**: Mendaftarkan `EventServiceProvider` di `bootstrap/providers.php` (saat ini belum terdaftar sehingga listener belum terpanggil), mengarahkan lookup kehamilan ke `$ancRecord->schedule->pregnancy` (`SEC-006`), dan menjaga eksekusi tetap sinkron/atomik bersama batas transaksi validasi (`SEC-010`, [ADR-0004](./adr/0004-runtime-octane-and-atomic-ttd-activation.md)).
+   - **Auto-Discovery & Perbaikan Wave 2**: Laravel 12 otomatis mendaftarkan listener di `app/Listeners` (`AncValidationCreated` → `AutoActivateTtdOnValidation`, diverifikasi oleh `AncValidationEventDiscoveryTest` tanpa `EventServiceProvider` legacy agar tidak tereksekusi ganda). Pada Wave 2 berikutnya (`W2-010`), lookup kehamilan diarahkan ke `$ancRecord->schedule->pregnancy` (`SEC-006`) dan eksekusi disatukan dalam batas transaksi validasi (`SEC-010`, [ADR-0004](./adr/0004-runtime-octane-and-atomic-ttd-activation.md)).
 5. **Octane State Safety**:
    - `NIKService` hanya menyimpan `$salt` (*readonly string* dari konfigurasi) sehingga aman dijadikan singleton di worker Octane.
    - Hindari menyimpan state per-request pada properti statis atau singleton mana pun.

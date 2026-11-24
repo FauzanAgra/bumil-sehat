@@ -4,12 +4,12 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 
 ## Progress Overview
 
-- **Status Progress**: 19 / 43 Completed (44%)
+- **Status Progress**: 25 / 43 Completed (58%)
 - **Total Tasks**: 43
-- **Completed (`[x]`)**: 19
-- **In Progress (`[~]`)**: 2
+- **Completed (`[x]`)**: 25
+- **In Progress (`[~]`)**: 0
 - **Blocked (`[!]`)**: 0
-- **Pending (`[ ]`)**: 22
+- **Pending (`[ ]`)**: 18
 
 > **Penanda Status**: `[ ]` Pending · `[~]` In Progress · `[x]` Completed · `[!]` Blocked
 
@@ -56,8 +56,8 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 | :-: | --- | --- | --- | --- | --- | :-: |
 | [x] | `W1-014` | Bangun Dashboard Bidan, daftar pasien binaan (pencarian/filter), & detail timeline ANC 1–6 + TTD | High | `W1-008` | Bidan hanya melihat pasien wilayahnya dengan prioritas risiko & antrean validasi (`FR-012`, `FR-013`) | 2026-05-07 |
 | [x] | `W1-015` | Bangun manajemen jadwal ANC (buat, ubah, tandai `missed` & `missed-direct`) | High | `W1-014` | Jadwal ANC 1–6 unik per kehamilan, mendukung reschedule & status `missed` (`FR-014`) | 2026-06-02 |
-| [~] | `W1-016` | Bangun validasi & penguncian ANC (`lockForUpdate`), konfirmasi/tolak risiko, & auto-aktivasi TTD | High | `W1-010`, `W1-014` | Validasi & lock sudah berjalan; pendaftaran `EventServiceProvider` untuk Auto-TTD diselesaikan di `W2-001` (`FR-015`, `FR-016`) | - |
-| [~] | `W1-017` | Bangun toggle TTD manual & pengaturan profil/password Bidan | Medium | `W1-014` | UI & controller sudah berjalan; perbaikan redirect `midwife.setting` diselesaikan di `W2-002` (`FR-016`, `FR-017`) | - |
+| [x] | `W1-016` | Bangun validasi & penguncian ANC (`lockForUpdate`), konfirmasi/tolak risiko, & auto-aktivasi TTD | High | `W1-010`, `W1-014` | Validasi & lock berjalan; auto-discovery listener Auto-TTD terverifikasi tunggal via `W2-001` (`FR-015`, `FR-016`) | 2026-11-24 |
+| [x] | `W1-017` | Bangun toggle TTD manual & pengaturan profil/password Bidan | Medium | `W1-014` | UI, controller, & redirect `midwife.profile.setting` terverifikasi lulus lewat `W2-002` (`FR-016`, `FR-017`) | 2026-11-24 |
 
 ### Module: Doctor Supervision
 
@@ -81,10 +81,10 @@ Dokumen ini adalah **single source of truth** untuk pelacakan progres implementa
 
 | Status | ID | Task | Priority | Dependencies | Acceptance Criteria | Completed Date |
 | :-: | --- | --- | --- | --- | --- | :-: |
-| [ ] | `W2-001` | Daftarkan `EventServiceProvider` di `bootstrap/providers.php` agar `AutoActivateTtdOnValidation` aktif | High | `W1-016` | `php artisan event:list` menampilkan `AutoActivateTtdOnValidation` pada `AncValidationCreated`; `W1-016` dapat ditandai `[x]` | - |
-| [ ] | `W2-002` | Perbaiki redirect `midwife.setting` → `midwife.profile.setting` di `Midwife\ProfileController` | High | `W1-017` | Update profil & password Bidan sukses redirect ke halaman setting tanpa `RouteNotFoundException`; `W1-017` dapat ditandai `[x]` | - |
-| [ ] | `W2-003` | Perbaiki redirect admin `route('admin.dashboard')` → `url('/admin')` di `RedirectIfAuthenticated` | High | `W1-008` | Admin yang sudah login dan mengakses `/login` dialihkan bersih ke `/admin` tanpa error route | - |
-| [ ] | `W2-004` | Ganti penanganan error duplikat MySQL `1062` → `UniqueConstraintViolationException` di `RegisterController` | High | `W1-006` | Pelanggaran duplikasi NIK/phone tertangani bersih di PostgreSQL maupun SQLite (`ADR-0001`) | - |
+| [x] | `W2-001` | Verifikasi event auto-discovery `AutoActivateTtdOnValidation`, hapus `EventServiceProvider` legacy (cegah duplikasi), & tambah test | High | `W1-016` | `php artisan event:list --event=AncValidationCreated` & `AncValidationEventDiscoveryTest` membuktikan listener terdaftar tepat 1x; `W1-016` selesai `[x]` | 2026-11-24 |
+| [x] | `W2-002` | Perbaiki redirect `midwife.setting` → `midwife.profile.setting` di `Midwife\ProfileController` | High | `W1-017` | Update profil & password Bidan sukses redirect ke halaman setting tanpa `RouteNotFoundException`; `W1-017` selesai `[x]` | 2026-11-24 |
+| [x] | `W2-003` | Perbaiki redirect admin `route('admin.dashboard')` → `url('/admin')` di `RedirectIfAuthenticated` | High | `W1-008` | Admin yang sudah login dan mengakses `/login` dialihkan bersih ke `/admin` tanpa error route | 2026-11-24 |
+| [x] | `W2-004` | Ganti penanganan error duplikat MySQL `1062` → `UniqueConstraintViolationException` di `RegisterController` | High | `W1-006` | Pelanggaran duplikasi NIK/phone tertangani bersih di PostgreSQL maupun SQLite (`ADR-0001`) | 2026-11-24 |
 
 ### Module: Security Hardening
 

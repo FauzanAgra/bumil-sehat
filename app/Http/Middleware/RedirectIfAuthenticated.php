@@ -26,7 +26,7 @@ class RedirectIfAuthenticated
                     'mother' => route('mother.dashboard'),
                     'midwife' => route('midwife.dashboard'),
                     'doctor' => route('doctor.dashboard'),
-                    'admin' => route('admin.dashboard'),
+                    'admin' => url('/admin'),
                     default => route('mother.dashboard'),
                 };
 

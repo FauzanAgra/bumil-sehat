@@ -53,7 +53,7 @@ class ProfileController extends Controller
         ]);
 
         return redirect()
-            ->route('midwife.setting')
+            ->route('midwife.profile.setting')
             ->with('success', 'Data diri berhasil diperbarui.');
     }
 
@@ -90,7 +90,7 @@ class ProfileController extends Controller
         ]);
 
         return redirect()
-            ->route('midwife.setting')
+            ->route('midwife.profile.setting')
             ->with('success', 'Password berhasil diperbarui.');
     }
 }
